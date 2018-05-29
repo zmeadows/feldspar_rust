@@ -187,6 +187,47 @@ impl Game {
                     move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
                 }
 
+                let white_king_square = self.board.get_king_square(White);
+
+                let has_kingside_castle_rights = self.castling_rights.intersects(CastlingRights::WhiteKingside);
+                let has_queenside_castle_rights = self.castling_rights.intersects(CastlingRights::WhiteQueenside);
+                let in_check = self.board.is_square_attacked_by(white_king_square, Black);
+
+                if has_kingside_castle_rights && !in_check {
+                    let kingside_castle_path_open = (nonempty_squares & WHITE_KINGSIDE_CASTLE_BITS).empty();
+
+                    if kingside_castle_path_open {
+                        let mut castle_path_is_safe: bool = true;
+
+                        for sq in WHITE_KINGSIDE_CASTLE_BITS {
+                            if self.board.is_square_attacked_by(sq, Black) {
+                                castle_path_is_safe = false;
+                            }
+                        }
+
+                        if castle_path_is_safe {
+                            move_buffer.push(Move::new(white_king_square, Square::new(1), KING_CASTLE_FLAG));
+                        }
+                    }
+                }
+
+                if has_queenside_castle_rights && !in_check {
+                    let queenside_castle_path_open = (nonempty_squares & WHITE_QUEENSIDE_CASTLE_BITS).empty();
+
+                    if queenside_castle_path_open {
+                        let mut castle_path_is_safe: bool = true;
+
+                        for sq in WHITE_QUEENSIDE_CASTLE_BITS {
+                            if self.board.is_square_attacked_by(sq, Black) {
+                                castle_path_is_safe = false;
+                            }
+                        }
+
+                        if castle_path_is_safe {
+                            move_buffer.push(Move::new(white_king_square, Square::new(5), QUEEN_CASTLE_FLAG));
+                        }
+                    }
+                }
 
 
             }

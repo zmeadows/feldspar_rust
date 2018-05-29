@@ -70,7 +70,7 @@ impl Board {
             }
         }
 
-        //TODO: Warning
+        //TODO: log warning
         return None;
     }
 
@@ -79,7 +79,6 @@ impl Board {
     }
 
     pub fn is_square_attacked_by(&self, square: Square, color: Color) -> bool {
-
         use PieceType::*;
 
         if (PAWN_ATTACKS[!color as usize][square.idx()] & self.get_pieces(color, Pawn)).nonempty() {
