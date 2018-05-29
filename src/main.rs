@@ -23,4 +23,9 @@ fn main() {
     get_negative_ray(Square::new(27), Direction::SW, b.occupied()).print();
     get_negative_ray(Square::new(27), Direction::SE, b.occupied()).print();
 
+    WHITE_KINGSIDE_CASTLE_BITS.print();
+    WHITE_QUEENSIDE_CASTLE_BITS.print();
+    BLACK_KINGSIDE_CASTLE_BITS.print();
+    BLACK_QUEENSIDE_CASTLE_BITS.print();
+
 }
