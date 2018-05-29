@@ -1,0 +1,3 @@
+nnoremap <leader><F8> :AsyncRun -cwd=/Users/zac/Code/mine/feldspar2 cargo build<cr> :copen<cr> :wincmd p<cr>
+nnoremap <leader>r :AsyncRun -cwd=/Users/zac/Code/mine/feldspar2 cargo run<cr> :copen<cr> :wincmd p<cr>
+compiler cargo
