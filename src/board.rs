@@ -1,4 +1,5 @@
 use core::*;
+use tables::*;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Board {
@@ -78,8 +79,29 @@ impl Board {
     }
 
     pub fn is_square_attacked_by(&self, square: Square, color: Color) -> bool {
+
+        use PieceType::*;
+
+        if (PAWN_ATTACKS[!color as usize][square.idx()] & self.get_pieces(color, Pawn)).nonempty() {
+            return true;
+        } else if (KNIGHT_TABLE[square.idx()] & self.get_pieces(color, Knight)).nonempty() {
+            return true;
+        } else if (KING_TABLE[square.idx()] & self.get_pieces(color, King)).nonempty() {
+            return true;
+        }
+
+        let occupied = self.occupied();
+
+        let bishops_queens = self.get_pieces(color, Queen) | self.get_pieces(color, Bishop);
+        if (get_bishop_rays(square, occupied) & bishops_queens).nonempty() {
+            return true;
+        }
+
+        let rooks_queens = self.get_pieces(color, Queen) | self.get_pieces(color, Rook);
+        if (get_rook_rays(square, occupied) & rooks_queens).nonempty() {
+            return true;
+        }
+
         return false;
     }
-
-
 }
