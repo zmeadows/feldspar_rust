@@ -73,4 +73,13 @@ impl Board {
         return None;
     }
 
+    pub fn get_king_square(&self, color: Color) -> Square {
+        self.get_pieces(color, PieceType::King).bitscan_forward()
+    }
+
+    pub fn is_square_attacked_by(&self, square: Square, color: Color) -> bool {
+        return false;
+    }
+
+
 }

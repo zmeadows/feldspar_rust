@@ -7,3 +7,4 @@ authors = ["zmeadows <zmeadows@gmail.com>"]
 colored = "1.6"
 log = "0.4.1"
 pretty_env_logger = "0.2.3"
+bitflags = "1.0.3"

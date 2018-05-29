@@ -1,5 +1,8 @@
 #![feature(const_fn)]
 
+#[macro_use]
+extern crate bitflags;
+
 mod core; use core::*;
 mod board; use board::*;
 mod print; // use print::*;

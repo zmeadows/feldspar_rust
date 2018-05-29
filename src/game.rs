@@ -3,19 +3,41 @@ use moves::*;
 use board::*;
 use tables::*;
 
+bitflags! {
+    pub struct CastlingRights: u32 {
+        const WhiteKingside  = 0b0001;
+        const WhiteQueenside = 0b0010;
+        const BlackKingside  = 0b0100;
+        const BlackQueenside = 0b1000;
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
-struct Game {
+pub struct Game {
     board: Board,
     to_move: Color,
-    ep_square: Square
+    ep_square: Option<Square>,
+    castling_rights: CastlingRights,
+    fifty_move_count: usize
 }
 
 
 impl Game {
+    pub fn new() -> Game {
+        Game {
+            board: Board::starting_position(),
+            to_move: Color::White,
+            ep_square: None,
+            castling_rights: CastlingRights::all(),
+            fifty_move_count: 0
+        }
+    }
+
     pub fn fill_move_buffer(&self, move_buffer: &mut Vec<Move>) {
         move_buffer.clear();
 
         let empty_squares = self.board.unoccupied();
+        let nonempty_squares = self.board.occupied();
 
         use Color::*;
         use PieceType::*;
@@ -62,7 +84,7 @@ impl Game {
                         move_buffer.push(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
                         move_buffer.push(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
                         move_buffer.push(Move::new(from, to, QUEEN_PROMO_CAPTURE_FLAG));
-                    } else if self.ep_square == to {
+                    } else if self.ep_square.is_some() && self.ep_square.unwrap() == to {
                         move_buffer.push(Move::new(from, to, EP_CAPTURE_FLAG));
                     } else {
                         move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
@@ -94,34 +116,80 @@ impl Game {
             /* BISHOPS */
             /***********/
 
-            /* 
-            temp_piece = game->board[BISHOPS][WHITE];
-            while (temp_piece)
             for from in self.board.get_pieces(White, Bishop)
             {
-                temp_move2 = get_bishop_rays(game->board[OCCUPIED][1], from);
+                let bishop_moves = get_bishop_rays(from, nonempty_squares);
 
                 /* quiets */
-                temp_move = temp_move2 & free_squares;
-                while (temp_move)
-                {
-                    to = bit_scan_forward(temp_move);
-                    game->move_buffer[move_count++] = create_move(from,to,QUIET_FLAG);
-                    temp_move &= temp_move - 1;
+                for to in bishop_moves & empty_squares {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
                 }
 
                 /* captures */
-                temp_move = temp_move2 & game->board[PIECES][BLACK];
-                while (temp_move)
-                {
-                    to = bit_scan_forward(temp_move);
-                    game->move_buffer[move_count++] = create_move(from,to,CAPTURE_FLAG);
-                    temp_move &= temp_move - 1;
+                for to in bishop_moves & black_pieces {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+
+            /*********/
+            /* ROOKS */
+            /*********/
+
+            for from in self.board.get_pieces(White, Rook)
+            {
+                let rook_moves = get_rook_rays(from, nonempty_squares);
+
+                /* quiets */
+                for to in rook_moves & empty_squares {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
                 }
 
-                temp_piece &= temp_piece - 1;
+                /* captures */
+                for to in rook_moves & black_pieces {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
             }
-        */
+
+            /*********/
+            /* QUEEN */
+            /*********/
+
+            for from in self.board.get_pieces(White, Queen)
+            {
+                let queen_moves = get_queen_rays(from, nonempty_squares);
+
+                /* quiets */
+                for to in queen_moves & empty_squares {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
+
+                /* captures */
+                for to in queen_moves & black_pieces {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+
+            /********/
+            /* KING */
+            /********/
+
+            {
+                let from = self.board.get_king_square(White);
+                let king_moves = KING_TABLE[from.idx()];
+
+                /* quiets */
+                for to in king_moves & empty_squares {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
+
+                /* captures */
+                for to in king_moves & black_pieces {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
+
+
+
+            }
 
 
 
