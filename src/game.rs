@@ -90,6 +90,40 @@ impl Game {
 
             }
 
+            /***********/
+            /* BISHOPS */
+            /***********/
+
+            /* 
+            temp_piece = game->board[BISHOPS][WHITE];
+            while (temp_piece)
+            for from in self.board.get_pieces(White, Bishop)
+            {
+                temp_move2 = get_bishop_rays(game->board[OCCUPIED][1], from);
+
+                /* quiets */
+                temp_move = temp_move2 & free_squares;
+                while (temp_move)
+                {
+                    to = bit_scan_forward(temp_move);
+                    game->move_buffer[move_count++] = create_move(from,to,QUIET_FLAG);
+                    temp_move &= temp_move - 1;
+                }
+
+                /* captures */
+                temp_move = temp_move2 & game->board[PIECES][BLACK];
+                while (temp_move)
+                {
+                    to = bit_scan_forward(temp_move);
+                    game->move_buffer[move_count++] = create_move(from,to,CAPTURE_FLAG);
+                    temp_move &= temp_move - 1;
+                }
+
+                temp_piece &= temp_piece - 1;
+            }
+        */
+
+
 
         }
     }

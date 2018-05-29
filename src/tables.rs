@@ -423,73 +423,6 @@ pub const RAY_TABLE: [[Bitboard;64];8] =
   ],
 
   /* NORTHEAST */
-  [ Bitboard::new(9241421688590303744)
-  , Bitboard::new(36099303471055872)
-  , Bitboard::new(141012904183808)
-  , Bitboard::new(550831656960)
-  , Bitboard::new(2151686144)
-  , Bitboard::new(8404992)
-  , Bitboard::new(32768)
-  , Bitboard::new(0)
-  , Bitboard::new(4620710844295151616)
-  , Bitboard::new(9241421688590303232)
-  , Bitboard::new(36099303471054848)
-  , Bitboard::new(141012904181760)
-  , Bitboard::new(550831652864)
-  , Bitboard::new(2151677952)
-  , Bitboard::new(8388608)
-  , Bitboard::new(0)
-  , Bitboard::new(2310355422147510272)
-  , Bitboard::new(4620710844295020544)
-  , Bitboard::new(9241421688590041088)
-  , Bitboard::new(36099303470530560)
-  , Bitboard::new(141012903133184)
-  , Bitboard::new(550829555712)
-  , Bitboard::new(2147483648)
-  , Bitboard::new(0)
-  , Bitboard::new(1155177711056977920)
-  , Bitboard::new(2310355422113955840)
-  , Bitboard::new(4620710844227911680)
-  , Bitboard::new(9241421688455823360)
-  , Bitboard::new(36099303202095104)
-  , Bitboard::new(141012366262272)
-  , Bitboard::new(549755813888)
-  , Bitboard::new(0)
-  , Bitboard::new(577588851233521664)
-  , Bitboard::new(1155177702467043328)
-  , Bitboard::new(2310355404934086656)
-  , Bitboard::new(4620710809868173312)
-  , Bitboard::new(9241421619736346624)
-  , Bitboard::new(36099165763141632)
-  , Bitboard::new(140737488355328)
-  , Bitboard::new(0)
-  , Bitboard::new(288793326105133056)
-  , Bitboard::new(577586652210266112)
-  , Bitboard::new(1155173304420532224)
-  , Bitboard::new(2310346608841064448)
-  , Bitboard::new(4620693217682128896)
-  , Bitboard::new(9241386435364257792)
-  , Bitboard::new(36028797018963968)
-  , Bitboard::new(0)
-  , Bitboard::new(144115188075855872)
-  , Bitboard::new(288230376151711744)
-  , Bitboard::new(576460752303423488)
-  , Bitboard::new(1152921504606846976)
-  , Bitboard::new(2305843009213693952)
-  , Bitboard::new(4611686018427387904)
-  , Bitboard::new(9223372036854775808)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  ],
-
-  /* NORTHWEST */
   [ Bitboard::new(0)
   , Bitboard::new(256)
   , Bitboard::new(66048)
@@ -556,74 +489,74 @@ pub const RAY_TABLE: [[Bitboard;64];8] =
   , Bitboard::new(0)
   ],
 
-  /* SOUTHEAST */
-  [ Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(0)
-  , Bitboard::new(2)
-  , Bitboard::new(4)
-  , Bitboard::new(8)
-  , Bitboard::new(16)
-  , Bitboard::new(32)
-  , Bitboard::new(64)
-  , Bitboard::new(128)
-  , Bitboard::new(0)
-  , Bitboard::new(516)
-  , Bitboard::new(1032)
-  , Bitboard::new(2064)
-  , Bitboard::new(4128)
-  , Bitboard::new(8256)
-  , Bitboard::new(16512)
+  /* NORTHWEST */
+  [ Bitboard::new(9241421688590303744)
+  , Bitboard::new(36099303471055872)
+  , Bitboard::new(141012904183808)
+  , Bitboard::new(550831656960)
+  , Bitboard::new(2151686144)
+  , Bitboard::new(8404992)
   , Bitboard::new(32768)
   , Bitboard::new(0)
-  , Bitboard::new(132104)
-  , Bitboard::new(264208)
-  , Bitboard::new(528416)
-  , Bitboard::new(1056832)
-  , Bitboard::new(2113664)
-  , Bitboard::new(4227072)
+  , Bitboard::new(4620710844295151616)
+  , Bitboard::new(9241421688590303232)
+  , Bitboard::new(36099303471054848)
+  , Bitboard::new(141012904181760)
+  , Bitboard::new(550831652864)
+  , Bitboard::new(2151677952)
   , Bitboard::new(8388608)
   , Bitboard::new(0)
-  , Bitboard::new(33818640)
-  , Bitboard::new(67637280)
-  , Bitboard::new(135274560)
-  , Bitboard::new(270549120)
-  , Bitboard::new(541097984)
-  , Bitboard::new(1082130432)
+  , Bitboard::new(2310355422147510272)
+  , Bitboard::new(4620710844295020544)
+  , Bitboard::new(9241421688590041088)
+  , Bitboard::new(36099303470530560)
+  , Bitboard::new(141012903133184)
+  , Bitboard::new(550829555712)
   , Bitboard::new(2147483648)
   , Bitboard::new(0)
-  , Bitboard::new(8657571872)
-  , Bitboard::new(17315143744)
-  , Bitboard::new(34630287488)
-  , Bitboard::new(69260574720)
-  , Bitboard::new(138521083904)
-  , Bitboard::new(277025390592)
+  , Bitboard::new(1155177711056977920)
+  , Bitboard::new(2310355422113955840)
+  , Bitboard::new(4620710844227911680)
+  , Bitboard::new(9241421688455823360)
+  , Bitboard::new(36099303202095104)
+  , Bitboard::new(141012366262272)
   , Bitboard::new(549755813888)
   , Bitboard::new(0)
-  , Bitboard::new(2216338399296)
-  , Bitboard::new(4432676798592)
-  , Bitboard::new(8865353596928)
-  , Bitboard::new(17730707128320)
-  , Bitboard::new(35461397479424)
-  , Bitboard::new(70918499991552)
+  , Bitboard::new(577588851233521664)
+  , Bitboard::new(1155177702467043328)
+  , Bitboard::new(2310355404934086656)
+  , Bitboard::new(4620710809868173312)
+  , Bitboard::new(9241421619736346624)
+  , Bitboard::new(36099165763141632)
   , Bitboard::new(140737488355328)
   , Bitboard::new(0)
-  , Bitboard::new(567382630219904)
-  , Bitboard::new(1134765260439552)
-  , Bitboard::new(2269530520813568)
-  , Bitboard::new(4539061024849920)
-  , Bitboard::new(9078117754732544)
-  , Bitboard::new(18155135997837312)
+  , Bitboard::new(288793326105133056)
+  , Bitboard::new(577586652210266112)
+  , Bitboard::new(1155173304420532224)
+  , Bitboard::new(2310346608841064448)
+  , Bitboard::new(4620693217682128896)
+  , Bitboard::new(9241386435364257792)
   , Bitboard::new(36028797018963968)
+  , Bitboard::new(0)
+  , Bitboard::new(144115188075855872)
+  , Bitboard::new(288230376151711744)
+  , Bitboard::new(576460752303423488)
+  , Bitboard::new(1152921504606846976)
+  , Bitboard::new(2305843009213693952)
+  , Bitboard::new(4611686018427387904)
+  , Bitboard::new(9223372036854775808)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
   , Bitboard::new(0)
   ],
 
-  /* SOUTHWEST */
+  /* SOUTHEAST */
   [ Bitboard::new(0)
   , Bitboard::new(0)
   , Bitboard::new(0)
@@ -688,11 +621,17 @@ pub const RAY_TABLE: [[Bitboard;64];8] =
   , Bitboard::new(4512412933881856)
   , Bitboard::new(9024825867763968)
   , Bitboard::new(18049651735527937)
-  ]
-];
+  ],
 
-pub const BIT_SET: [Bitboard;64] =
-  [ Bitboard::new(1)
+  /* SOUTHWEST */
+  [ Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
+  , Bitboard::new(0)
   , Bitboard::new(2)
   , Bitboard::new(4)
   , Bitboard::new(8)
@@ -700,63 +639,57 @@ pub const BIT_SET: [Bitboard;64] =
   , Bitboard::new(32)
   , Bitboard::new(64)
   , Bitboard::new(128)
-  , Bitboard::new(256)
-  , Bitboard::new(512)
-  , Bitboard::new(1024)
-  , Bitboard::new(2048)
-  , Bitboard::new(4096)
-  , Bitboard::new(8192)
-  , Bitboard::new(16384)
+  , Bitboard::new(0)
+  , Bitboard::new(516)
+  , Bitboard::new(1032)
+  , Bitboard::new(2064)
+  , Bitboard::new(4128)
+  , Bitboard::new(8256)
+  , Bitboard::new(16512)
   , Bitboard::new(32768)
-  , Bitboard::new(65536)
-  , Bitboard::new(131072)
-  , Bitboard::new(262144)
-  , Bitboard::new(524288)
-  , Bitboard::new(1048576)
-  , Bitboard::new(2097152)
-  , Bitboard::new(4194304)
+  , Bitboard::new(0)
+  , Bitboard::new(132104)
+  , Bitboard::new(264208)
+  , Bitboard::new(528416)
+  , Bitboard::new(1056832)
+  , Bitboard::new(2113664)
+  , Bitboard::new(4227072)
   , Bitboard::new(8388608)
-  , Bitboard::new(16777216)
-  , Bitboard::new(33554432)
-  , Bitboard::new(67108864)
-  , Bitboard::new(134217728)
-  , Bitboard::new(268435456)
-  , Bitboard::new(536870912)
-  , Bitboard::new(1073741824)
+  , Bitboard::new(0)
+  , Bitboard::new(33818640)
+  , Bitboard::new(67637280)
+  , Bitboard::new(135274560)
+  , Bitboard::new(270549120)
+  , Bitboard::new(541097984)
+  , Bitboard::new(1082130432)
   , Bitboard::new(2147483648)
-  , Bitboard::new(4294967296)
-  , Bitboard::new(8589934592)
-  , Bitboard::new(17179869184)
-  , Bitboard::new(34359738368)
-  , Bitboard::new(68719476736)
-  , Bitboard::new(137438953472)
-  , Bitboard::new(274877906944)
+  , Bitboard::new(0)
+  , Bitboard::new(8657571872)
+  , Bitboard::new(17315143744)
+  , Bitboard::new(34630287488)
+  , Bitboard::new(69260574720)
+  , Bitboard::new(138521083904)
+  , Bitboard::new(277025390592)
   , Bitboard::new(549755813888)
-  , Bitboard::new(1099511627776)
-  , Bitboard::new(2199023255552)
-  , Bitboard::new(4398046511104)
-  , Bitboard::new(8796093022208)
-  , Bitboard::new(17592186044416)
-  , Bitboard::new(35184372088832)
-  , Bitboard::new(70368744177664)
+  , Bitboard::new(0)
+  , Bitboard::new(2216338399296)
+  , Bitboard::new(4432676798592)
+  , Bitboard::new(8865353596928)
+  , Bitboard::new(17730707128320)
+  , Bitboard::new(35461397479424)
+  , Bitboard::new(70918499991552)
   , Bitboard::new(140737488355328)
-  , Bitboard::new(281474976710656)
-  , Bitboard::new(562949953421312)
-  , Bitboard::new(1125899906842624)
-  , Bitboard::new(2251799813685248)
-  , Bitboard::new(4503599627370496)
-  , Bitboard::new(9007199254740992)
-  , Bitboard::new(18014398509481984)
+  , Bitboard::new(0)
+  , Bitboard::new(567382630219904)
+  , Bitboard::new(1134765260439552)
+  , Bitboard::new(2269530520813568)
+  , Bitboard::new(4539061024849920)
+  , Bitboard::new(9078117754732544)
+  , Bitboard::new(18155135997837312)
   , Bitboard::new(36028797018963968)
-  , Bitboard::new(72057594037927936)
-  , Bitboard::new(144115188075855872)
-  , Bitboard::new(288230376151711744)
-  , Bitboard::new(576460752303423488)
-  , Bitboard::new(1152921504606846976)
-  , Bitboard::new(2305843009213693952)
-  , Bitboard::new(4611686018427387904)
-  , Bitboard::new(9223372036854775808)
-  ];
+  , Bitboard::new(0)
+  ]
+];
 
 pub const PAWN_ATTACKS: [[Bitboard;64];2] =
 [
@@ -893,3 +826,68 @@ pub const PAWN_ATTACKS: [[Bitboard;64];2] =
   ]
 ];
 
+pub fn get_positive_ray(square: Square, dir: Direction, occupied: Bitboard) -> Bitboard
+{
+   let attacks = RAY_TABLE[dir as usize][square.idx()];
+   let blocker = attacks & occupied;
+   if blocker.nonempty() {
+      let blocker_square = blocker.bitscan_forward();
+      return (attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()]);
+   } else {
+       return attacks;
+   }
+}
+
+pub fn get_negative_ray(square: Square, dir: Direction, occupied: Bitboard) -> Bitboard
+{
+   let attacks = RAY_TABLE[dir as usize][square.idx()];
+   let blocker = attacks & occupied;
+   if blocker.nonempty() {
+      let blocker_square = blocker.bitscan_reverse();
+      return (attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()]);
+   } else {
+       return attacks;
+   }
+}
+
+pub fn get_diagonal_ray(square: Square, occupied: Bitboard) -> Bitboard
+{
+    return get_positive_ray(square, Direction::NE, occupied)
+         | get_negative_ray(square, Direction::SW, occupied);
+}
+
+pub fn get_antidiagonal_ray(square: Square, occupied: Bitboard) -> Bitboard
+{
+    return get_positive_ray(square, Direction::NW, occupied)
+         | get_negative_ray(square, Direction::SE, occupied);
+}
+
+pub fn get_file_ray(square: Square, occupied: Bitboard) -> Bitboard
+{
+    return get_positive_ray(square, Direction::N, occupied)
+         | get_negative_ray(square, Direction::S, occupied);
+}
+
+pub fn get_rank_ray(square: Square, occupied: Bitboard) -> Bitboard
+{
+    return get_positive_ray(square, Direction::E, occupied)
+         | get_negative_ray(square, Direction::W, occupied);
+}
+
+pub fn get_rook_rays(square: Square, occupied: Bitboard) -> Bitboard
+{
+    return get_file_ray(square, occupied)
+         | get_rank_ray(square, occupied);
+}
+
+pub fn get_bishop_rays(square: Square, occupied: Bitboard) -> Bitboard
+{
+    return get_diagonal_ray(square, occupied)
+         | get_antidiagonal_ray(square, occupied);
+}
+
+pub fn get_queen_rays(square: Square, occupied: Bitboard) -> Bitboard
+{
+    return get_bishop_rays(square, occupied)
+         | get_rook_rays(square, occupied);
+}

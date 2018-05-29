@@ -3,6 +3,7 @@ use core::*;
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Move(u32);
 
+//TODO: create newtype for MoveFlag
 /* 4-bit sequences describing move type */
 pub const QUIET_FLAG                : u32 = 0b0000;
 pub const DOUBLE_PAWN_PUSH_FLAG     : u32 = 0b0001;

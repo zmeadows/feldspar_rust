@@ -1,8 +1,11 @@
 use std::slice::Iter;
-use std::ops::BitAndAssign;
+
 use std::ops::BitAnd;
+use std::ops::BitAndAssign;
 use std::ops::BitOr;
+use std::ops::BitXorAssign;
 use std::ops::Sub;
+use std::ops::BitXor;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Bitboard(u64);
@@ -11,6 +14,7 @@ impl Bitboard {
     pub const fn new(bb: u64) -> Bitboard { return Bitboard(bb); }
 
     pub fn bitscan_forward(self) -> Square { return Square(self.0.trailing_zeros()); }
+    pub fn bitscan_reverse(self) -> Square { return Square(63 - self.0.leading_zeros()); }
     pub fn nonempty(self) -> bool { return self.0 != 0; }
     pub fn empty(self) -> bool { return self.0 == 0; }
 
@@ -40,6 +44,21 @@ impl BitOr for Bitboard {
 
     fn bitor(self, rhs: Self) -> Self {
         Bitboard(self.0 | rhs.0)
+    }
+}
+
+impl BitXorAssign for Bitboard {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        self.0 ^= rhs.0;
+    }
+}
+
+impl BitXor for Bitboard {
+    type Output = Self;
+
+    // rhs is the "right-hand side" of the expression `a ^ b`
+    fn bitxor(self, rhs: Self) -> Self {
+        Bitboard(self.0 ^ rhs.0)
     }
 }
 
@@ -94,6 +113,7 @@ impl Square {
     pub fn idx(self) -> usize { return self.0 as usize; }
     pub fn unwrap(self) -> u32 { return self.0; }
 
+    //TODO: from 'e3' type notation
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
