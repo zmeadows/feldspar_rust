@@ -46,8 +46,13 @@ impl Board {
     }
 
     pub fn set_piece_bit(&mut self, color: Color, ptype: PieceType, square: Square) {
-        let b: &mut Bitboard = self.get_pieces_mut(color, ptype);
-        *b |= square.bitrep();
+        let bit = square.bitrep();
+        {
+            let b: &mut Bitboard = self.get_pieces_mut(color, ptype);
+            *b |= bit;
+        }
+        self.occupied[color as usize] |= bit;
+        self.unoccupied &= !bit;
     }
 
     pub fn occupied_by(&self, color: Color) -> Bitboard {

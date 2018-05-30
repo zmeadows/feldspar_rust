@@ -75,6 +75,14 @@ impl Sub for Bitboard {
     }
 }
 
+impl Not for Bitboard {
+    type Output = Bitboard;
+
+    fn not(self) -> Bitboard {
+        return Bitboard(!self.0);
+    }
+}
+
 pub struct BitboardIterator {
     bits: Bitboard
 }
