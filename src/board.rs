@@ -123,4 +123,44 @@ impl Board {
 
         return false;
     }
+
+    pub fn attacked_by(&self, attacking_color: Color, remove_king: bool) -> Bitboard {
+        use PieceType::*;
+
+        let defending_color = !attacking_color;
+        let mut attacked: Bitboard = Bitboard::new(0);
+
+        let defending_pieces = if remove_king {
+            self.occupied_by(defending_color) & !self.get_king_square(defending_color).bitrep()
+        } else {
+            self.occupied_by(defending_color)
+        };
+
+        let attacking_pieces = self.occupied_by(attacking_color);
+        let all_pieces = defending_pieces & attacking_pieces;
+
+        for from in self.get_pieces(attacking_color, Pawn) {
+            attacked |= PAWN_ATTACKS[attacking_color as usize][from.idx()];
+        }
+
+        for from in self.get_pieces(attacking_color, Knight) {
+            attacked |= KNIGHT_TABLE[from.idx()];
+        }
+
+        for from in self.get_pieces(attacking_color, Bishop) {
+            attacked |= get_bishop_rays(from, all_pieces);
+        }
+
+        for from in self.get_pieces(attacking_color, Rook) {
+            attacked |= get_rook_rays(from, all_pieces);
+        }
+
+        for from in self.get_pieces(attacking_color, Queen) {
+            attacked |= get_queen_rays(from, all_pieces);
+        }
+
+        attacked |= KING_TABLE[self.get_king_square(attacking_color).idx()];
+
+        return attacked;
+    }
 }

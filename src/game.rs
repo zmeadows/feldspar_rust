@@ -159,6 +159,7 @@ impl Game {
         let delta_pawn_single_push: i32 = if self.to_move == White { -8 } else { 8 };
         let delta_pawn_double_push: i32 = if self.to_move == White { -16 } else { 16 };
         let double_pawn_push_rank = if self.to_move == White { RANK4 } else { RANK5 };
+        let promotion_rank = if self.to_move == White { 8 } else { 1 };
 
         // single pushes (and promotions)
         for to in advanced_pawns & empty_squares
@@ -177,7 +178,7 @@ impl Game {
 
         // double pushes
         for to in double_advanced_pawns & empty_squares & double_pawn_push_rank {
-            let from = Square::new(to.unwrap() - 16);
+            let from = Square::new((to.unwrap() as i32 + delta_pawn_double_push) as u32);
             move_buffer.push(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
         }
 
@@ -186,7 +187,7 @@ impl Game {
         {
             for to in PAWN_ATTACKS[color_to_move as usize][from.idx()] & opponent_pieces
             {
-                if to.rank() == 8 {
+                if to.rank() == promotion_rank {
                     move_buffer.push(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
                     move_buffer.push(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
                     move_buffer.push(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
