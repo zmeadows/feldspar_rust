@@ -23,11 +23,7 @@ impl Bitboard {
     pub fn shifted_right(self) -> Bitboard { return Bitboard(self.0 << 1); }
     pub fn shifted_down(self) -> Bitboard { return Bitboard(self.0 >> 8); }
     pub fn shifted_up(self) -> Bitboard { return Bitboard(self.0 << 8); }
-
-    // pub fn set_piece_bit(&mut self, sq: Square, color: Color, piece: PieceType) { 
 }
-
-// fn bitboard_array(data: &[u8], ret: &mut [u8], len: u8) -> 
 
 impl BitAnd for Bitboard {
     type Output = Bitboard;
