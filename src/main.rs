@@ -8,7 +8,7 @@ mod board; use board::*;
 mod print; // use print::*;
 mod moves; // use moves::*;
 mod tables; use tables::*;
-mod game; // use game::*;
+mod game; use game::*;
 
 fn main() {
     let b = Board::starting_position();
@@ -27,5 +27,10 @@ fn main() {
     WHITE_QUEENSIDE_CASTLE_BITS.print();
     BLACK_KINGSIDE_CASTLE_BITS.print();
     BLACK_QUEENSIDE_CASTLE_BITS.print();
+
+    let g = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    if (g.is_some()) {
+        g.unwrap().board.get_pieces(Color::Black, PieceType::Knight).print();
+    }
 
 }

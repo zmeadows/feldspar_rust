@@ -4,9 +4,10 @@ use std::str::Chars;
 use std::ops::BitAnd;
 use std::ops::BitAndAssign;
 use std::ops::BitOr;
+use std::ops::BitOrAssign;
+use std::ops::BitXor;
 use std::ops::BitXorAssign;
 use std::ops::Sub;
-use std::ops::BitXor;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Bitboard(u64);
@@ -46,18 +47,23 @@ impl BitOr for Bitboard {
     }
 }
 
-impl BitXorAssign for Bitboard {
-    fn bitxor_assign(&mut self, rhs: Self) {
-        self.0 ^= rhs.0;
+impl BitOrAssign for Bitboard {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0;
     }
 }
 
 impl BitXor for Bitboard {
     type Output = Self;
 
-    // rhs is the "right-hand side" of the expression `a ^ b`
     fn bitxor(self, rhs: Self) -> Self {
         Bitboard(self.0 ^ rhs.0)
+    }
+}
+
+impl BitXorAssign for Bitboard {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        self.0 ^= rhs.0;
     }
 }
 

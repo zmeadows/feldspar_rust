@@ -1,7 +1,7 @@
 use core::*;
 use tables::*;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Board {
     pieces: [Bitboard;12],
     occupied: [Bitboard;2],
@@ -43,6 +43,11 @@ impl Board {
     pub fn get_pieces_mut(&mut self, color: Color, ptype: PieceType) -> &mut Bitboard {
         let idx = 2 * ptype as usize + color as usize;
         return &mut self.pieces[idx];
+    }
+
+    pub fn set_piece_bit(&mut self, color: Color, ptype: PieceType, square: Square) {
+        let b: &mut Bitboard = self.get_pieces_mut(color, ptype);
+        *b |= square.bitrep();
     }
 
     pub fn occupied_by(&self, color: Color) -> Bitboard {
