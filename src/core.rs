@@ -1,4 +1,5 @@
 use std::slice::Iter;
+use std::str::Chars;
 
 use std::ops::BitAnd;
 use std::ops::BitAndAssign;
@@ -22,6 +23,8 @@ impl Bitboard {
     pub fn shifted_right(self) -> Bitboard { return Bitboard(self.0 << 1); }
     pub fn shifted_down(self) -> Bitboard { return Bitboard(self.0 >> 8); }
     pub fn shifted_up(self) -> Bitboard { return Bitboard(self.0 << 8); }
+
+    // pub fn set_piece_bit(&mut self, sq: Square, color: Color, piece: PieceType) { 
 }
 
 // fn bitboard_array(data: &[u8], ret: &mut [u8], len: u8) -> 
@@ -113,7 +116,47 @@ impl Square {
     pub fn idx(self) -> usize { return self.0 as usize; }
     pub fn unwrap(self) -> u32 { return self.0; }
 
-    //TODO: from 'e3' type notation
+    pub fn from_rank_file(rank: u32, file: u32) -> Option<Square> {
+        let idx = (rank - 1) * 8 + file;
+        if idx < 64 {
+            return Some(Square::new(idx));
+        } else {
+            return None;
+        }
+    }
+
+    pub fn from_algebraic(alg: &'static str) -> Option<Square> {
+        let mut it: Chars = alg.chars();
+
+        let file_idx = match it.next() {
+            Some('h') => Some(0),
+            Some('g') => Some(1),
+            Some('f') => Some(2),
+            Some('e') => Some(3),
+            Some('d') => Some(4),
+            Some('c') => Some(5),
+            Some('b') => Some(6),
+            Some('a') => Some(7),
+            Some(_) => None,
+            None => None
+        };
+
+        let rank_idx: Option<u32> = match it.next() {
+            Some(x) => x.to_digit(10),
+            None => None
+        };
+
+
+        match file_idx {
+            None => return None,
+            Some(fid) => {
+                match rank_idx {
+                    None => return None,
+                    Some(rid) => return Square::from_rank_file(rid, fid)
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]

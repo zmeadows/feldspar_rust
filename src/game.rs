@@ -5,10 +5,10 @@ use tables::*;
 
 bitflags! {
     pub struct CastlingRights: u32 {
-        const WhiteKingside  = 0b0001;
-        const WhiteQueenside = 0b0010;
-        const BlackKingside  = 0b0100;
-        const BlackQueenside = 0b1000;
+        const WHITE_KINGSIDE  = 0b0001;
+        const WHITE_QUEENSIDE = 0b0010;
+        const BLACK_KINGSIDE  = 0b0100;
+        const BLACK_QUEENSIDE = 0b1000;
     }
 }
 
@@ -31,6 +31,26 @@ impl Game {
             castling_rights: CastlingRights::all(),
             fifty_move_count: 0
         }
+    }
+
+    pub fn new_from_fen(fen: String) -> Option<Game> {
+        let words: Vec<&str> = fen.split(' ').collect();
+
+        if words.len() != 6 {
+            return None;
+        }
+
+        let mut game = Game::new();
+        game.board = Board::starting_position();
+        let mut current_square: Square = Square::new(63);
+
+        for ch in words[0].chars() {
+            match ch {
+                _ => return None
+            }
+        }
+
+        return Some(game);
     }
 
     pub fn fill_move_buffer(&self, move_buffer: &mut Vec<Move>) {
@@ -174,23 +194,28 @@ impl Game {
             /********/
 
             {
-                let from = self.board.get_king_square(White);
-                let king_moves = KING_TABLE[from.idx()];
+                let white_king_square = self.board.get_king_square(White);
+                let king_moves = KING_TABLE[white_king_square.idx()];
 
                 /* quiets */
                 for to in king_moves & empty_squares {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    if !self.board.is_square_attacked_by(to, Black) {
+                        move_buffer.push(Move::new(white_king_square, to, QUIET_FLAG));
+                    }
                 }
 
                 /* captures */
                 for to in king_moves & black_pieces {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    if !self.board.is_square_attacked_by(to, Black) {
+                        move_buffer.push(Move::new(white_king_square, to, CAPTURE_FLAG));
+                    }
                 }
 
-                let white_king_square = self.board.get_king_square(White);
+                /* castling */
 
-                let has_kingside_castle_rights = self.castling_rights.intersects(CastlingRights::WhiteKingside);
-                let has_queenside_castle_rights = self.castling_rights.intersects(CastlingRights::WhiteQueenside);
+
+                let has_kingside_castle_rights = self.castling_rights.intersects(CastlingRights::WHITE_KINGSIDE);
+                let has_queenside_castle_rights = self.castling_rights.intersects(CastlingRights::WHITE_QUEENSIDE);
                 let in_check = self.board.is_square_attacked_by(white_king_square, Black);
 
                 if has_kingside_castle_rights && !in_check {

@@ -838,7 +838,7 @@ pub fn get_positive_ray(square: Square, dir: Direction, occupied: Bitboard) -> B
    let blocker = attacks & occupied;
    if blocker.nonempty() {
       let blocker_square = blocker.bitscan_forward();
-      return (attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()]);
+      return attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()];
    } else {
        return attacks;
    }
@@ -850,7 +850,7 @@ pub fn get_negative_ray(square: Square, dir: Direction, occupied: Bitboard) -> B
    let blocker = attacks & occupied;
    if blocker.nonempty() {
       let blocker_square = blocker.bitscan_reverse();
-      return (attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()]);
+      return attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()];
    } else {
        return attacks;
    }
