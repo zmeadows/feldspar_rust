@@ -31,6 +31,9 @@ fn main() {
     let g = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     if (g.is_some()) {
         g.unwrap().board.get_pieces(Color::Black, PieceType::Knight).print();
+        g.unwrap().board.get_pieces(Color::White, PieceType::Knight).print();
+        g.unwrap().board.get_pieces(Color::White, PieceType::Pawn).print();
+        g.unwrap().board.print();
     }
 
 }

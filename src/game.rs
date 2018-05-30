@@ -61,15 +61,15 @@ impl Game {
         { // build up the game board
             let mut current_square: Square = Square::new(63);
 
-            let decrement_square = |sq: &mut Square| {
+            let decrement_square = |sq: &mut Square, n: u32| {
                 if sq.unwrap() > 0 {
-                    *sq = Square::new(sq.unwrap() - 1);
+                    *sq = Square::new(sq.unwrap() - n);
                 }
             };
 
             let mut add_piece = |color: Color, piece: PieceType, sq: &mut Square| {
                 game.board.set_piece_bit(color, piece, *sq);
-                decrement_square(sq);
+                decrement_square(sq, 1);
             };
 
             for ch in words[0].chars() {
@@ -86,14 +86,14 @@ impl Game {
                     'R' => add_piece(White , Rook   , &mut current_square) ,
                     'Q' => add_piece(White , Queen  , &mut current_square) ,
                     'K' => add_piece(White , King   , &mut current_square) ,
-                    '1' => decrement_square(&mut current_square),
-                    '2' => decrement_square(&mut current_square),
-                    '3' => decrement_square(&mut current_square),
-                    '4' => decrement_square(&mut current_square),
-                    '5' => decrement_square(&mut current_square),
-                    '6' => decrement_square(&mut current_square),
-                    '7' => decrement_square(&mut current_square),
-                    '8' => decrement_square(&mut current_square),
+                    '1' => decrement_square(&mut current_square, 1),
+                    '2' => decrement_square(&mut current_square, 2),
+                    '3' => decrement_square(&mut current_square, 3),
+                    '4' => decrement_square(&mut current_square, 4),
+                    '5' => decrement_square(&mut current_square, 5),
+                    '6' => decrement_square(&mut current_square, 6),
+                    '7' => decrement_square(&mut current_square, 7),
+                    '8' => decrement_square(&mut current_square, 8),
                     '/' => {},
                     _ => return None
                 }
