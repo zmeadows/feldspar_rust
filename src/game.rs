@@ -141,209 +141,203 @@ impl Game {
     pub fn fill_move_buffer(&self, move_buffer: &mut Vec<Move>) {
         move_buffer.clear();
 
-        let empty_squares = self.board.unoccupied();
-        let nonempty_squares = self.board.occupied();
-
         use Color::*;
         use PieceType::*;
 
-        if self.to_move == White {
+        let empty_squares = self.board.unoccupied();
+        let all_pieces = self.board.occupied();
+        let opponent_pieces = if self.to_move == White { self.board.occupied_by(Black) } else { self.board.occupied_by(White) };
+        let color_to_move = self.to_move;
 
-            let black_pieces = self.board.occupied_by(Black);
+        /*********/
+        /* PAWNS */
+        /*********/
 
-            /*********/
-            /* PAWNS */
-            /*********/
+        let pawns = self.board.get_pieces(color_to_move, Pawn);
+        let advanced_pawns = if color_to_move == White { pawns.shifted_up() } else { pawns.shifted_down() };
+        let double_advanced_pawns = if color_to_move == White { advanced_pawns.shifted_up() } else { advanced_pawns.shifted_down() };
+        let delta_pawn_single_push: i32 = if self.to_move == White { -8 } else { 8 };
+        let delta_pawn_double_push: i32 = if self.to_move == White { -16 } else { 16 };
+        let double_pawn_push_rank = if self.to_move == White { RANK4 } else { RANK5 };
 
-            let white_pawns = self.board.get_pieces(White, Pawn);
-            let advanced_pawns = white_pawns.shifted_up();
+        // single pushes (and promotions)
+        for to in advanced_pawns & empty_squares
+        {
+            let from = Square::new((to.unwrap() as i32 + delta_pawn_single_push) as u32);
 
-            // single pushes (and promotions)
-            for to in advanced_pawns & empty_squares
+            if to.rank() == 8 {
+                move_buffer.push(Move::new(from, to, BISHOP_PROMO_FLAG));
+                move_buffer.push(Move::new(from, to, KNIGHT_PROMO_FLAG));
+                move_buffer.push(Move::new(from, to, ROOK_PROMO_FLAG));
+                move_buffer.push(Move::new(from, to, QUEEN_PROMO_FLAG));
+            } else {
+                move_buffer.push(Move::new(from, to, QUIET_FLAG));
+            }
+        }
+
+        // double pushes
+        for to in double_advanced_pawns & empty_squares & double_pawn_push_rank {
+            let from = Square::new(to.unwrap() - 16);
+            move_buffer.push(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
+        }
+
+        // captures (and capture-promotions)
+        for from in pawns
+        {
+            for to in PAWN_ATTACKS[color_to_move as usize][from.idx()] & opponent_pieces
             {
-                let from = Square::new(to.unwrap() - 8);
-
-                if to.unwrap()/8 == 7 {
-                    move_buffer.push(Move::new(from, to, BISHOP_PROMO_FLAG));
-                    move_buffer.push(Move::new(from, to, KNIGHT_PROMO_FLAG));
-                    move_buffer.push(Move::new(from, to, ROOK_PROMO_FLAG));
-                    move_buffer.push(Move::new(from, to, QUEEN_PROMO_FLAG));
+                if to.rank() == 8 {
+                    move_buffer.push(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
+                    move_buffer.push(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
+                    move_buffer.push(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
+                    move_buffer.push(Move::new(from, to, QUEEN_PROMO_CAPTURE_FLAG));
+                } else if self.ep_square.is_some() && self.ep_square.unwrap() == to {
+                    move_buffer.push(Move::new(from, to, EP_CAPTURE_FLAG));
                 } else {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
-                }
-            }
-
-            // double pushes
-            for to in advanced_pawns.shifted_up() & empty_squares & RANK4 {
-                let from = Square::new(to.unwrap() - 16);
-                move_buffer.push(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
-            }
-
-            // captures (and capture-promotions)
-            for from in white_pawns
-            {
-                for to in PAWN_ATTACKS[White as usize][from.idx()] & black_pieces
-                {
-                    if to.unwrap()/8 == 7 {
-                        move_buffer.push(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
-                        move_buffer.push(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
-                        move_buffer.push(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
-                        move_buffer.push(Move::new(from, to, QUEEN_PROMO_CAPTURE_FLAG));
-                    } else if self.ep_square.is_some() && self.ep_square.unwrap() == to {
-                        move_buffer.push(Move::new(from, to, EP_CAPTURE_FLAG));
-                    } else {
-                        move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
-                    }
-                }
-            }
-
-            /***********/
-            /* KNIGHTS */
-            /***********/
-
-            for from in self.board.get_pieces(White, Knight)
-            {
-                let knight_moves = KNIGHT_TABLE[from.idx()];
-
-                /* quiets */
-                for to in knight_moves & empty_squares {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
-                }
-
-                /* captures */
-                for to in knight_moves & black_pieces {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
-                }
-
-            }
-
-            /***********/
-            /* BISHOPS */
-            /***********/
-
-            for from in self.board.get_pieces(White, Bishop)
-            {
-                let bishop_moves = get_bishop_rays(from, nonempty_squares);
-
-                /* quiets */
-                for to in bishop_moves & empty_squares {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
-                }
-
-                /* captures */
-                for to in bishop_moves & black_pieces {
                     move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
+        }
 
-            /*********/
-            /* ROOKS */
-            /*********/
+        /***********/
+        /* KNIGHTS */
+        /***********/
 
-            for from in self.board.get_pieces(White, Rook)
-            {
-                let rook_moves = get_rook_rays(from, nonempty_squares);
+        for from in self.board.get_pieces(color_to_move, Knight)
+        {
+            let knight_moves = KNIGHT_TABLE[from.idx()];
 
-                /* quiets */
-                for to in rook_moves & empty_squares {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
-                }
+            /* quiets */
+            for to in knight_moves & empty_squares {
+                move_buffer.push(Move::new(from, to, QUIET_FLAG));
+            }
 
-                /* captures */
-                for to in rook_moves & black_pieces {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+            /* captures */
+            for to in knight_moves & opponent_pieces {
+                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+            }
+
+        }
+
+        /***********/
+        /* BISHOPS */
+        /***********/
+
+        for from in self.board.get_pieces(color_to_move, Bishop)
+        {
+            let bishop_moves = get_bishop_rays(from, all_pieces);
+
+            /* quiets */
+            for to in bishop_moves & empty_squares {
+                move_buffer.push(Move::new(from, to, QUIET_FLAG));
+            }
+
+            /* captures */
+            for to in bishop_moves & opponent_pieces {
+                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+            }
+        }
+
+        /*********/
+        /* ROOKS */
+        /*********/
+
+        for from in self.board.get_pieces(color_to_move, Rook)
+        {
+            let rook_moves = get_rook_rays(from, all_pieces);
+
+            /* quiets */
+            for to in rook_moves & empty_squares {
+                move_buffer.push(Move::new(from, to, QUIET_FLAG));
+            }
+
+            /* captures */
+            for to in rook_moves & opponent_pieces {
+                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+            }
+        }
+
+        /*********/
+        /* QUEEN */
+        /*********/
+
+        for from in self.board.get_pieces(color_to_move, Queen)
+        {
+            let queen_moves = get_queen_rays(from, all_pieces);
+
+            /* quiets */
+            for to in queen_moves & empty_squares {
+                move_buffer.push(Move::new(from, to, QUIET_FLAG));
+            }
+
+            /* captures */
+            for to in queen_moves & opponent_pieces {
+                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+            }
+        }
+
+        /********/
+        /* KING */
+        /********/
+
+        {
+            let king_square = self.board.get_king_square(color_to_move);
+            let king_moves = KING_TABLE[king_square.idx()];
+
+            /* quiets */
+            for to in king_moves & empty_squares {
+                if !self.board.is_square_attacked_by(to, Black) {
+                    move_buffer.push(Move::new(king_square, to, QUIET_FLAG));
                 }
             }
 
-            /*********/
-            /* QUEEN */
-            /*********/
-
-            for from in self.board.get_pieces(White, Queen)
-            {
-                let queen_moves = get_queen_rays(from, nonempty_squares);
-
-                /* quiets */
-                for to in queen_moves & empty_squares {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
-                }
-
-                /* captures */
-                for to in queen_moves & black_pieces {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+            /* captures */
+            for to in king_moves & opponent_pieces {
+                if !self.board.is_square_attacked_by(to, Black) {
+                    move_buffer.push(Move::new(king_square, to, CAPTURE_FLAG));
                 }
             }
 
-            /********/
-            /* KING */
-            /********/
+            /* castling */
+            let has_kingside_castle_rights = self.castling_rights.intersects(CastlingRights::WHITE_KINGSIDE);
+            let has_queenside_castle_rights = self.castling_rights.intersects(CastlingRights::WHITE_QUEENSIDE);
+            let in_check = self.board.is_square_attacked_by(king_square, Black);
 
-            {
-                let white_king_square = self.board.get_king_square(White);
-                let king_moves = KING_TABLE[white_king_square.idx()];
+            if has_kingside_castle_rights && !in_check {
+                let kingside_castle_path_open = (all_pieces & WHITE_KINGSIDE_CASTLE_BITS).empty();
 
-                /* quiets */
-                for to in king_moves & empty_squares {
-                    if !self.board.is_square_attacked_by(to, Black) {
-                        move_buffer.push(Move::new(white_king_square, to, QUIET_FLAG));
-                    }
-                }
+                if kingside_castle_path_open {
+                    let mut castle_path_is_safe: bool = true;
 
-                /* captures */
-                for to in king_moves & black_pieces {
-                    if !self.board.is_square_attacked_by(to, Black) {
-                        move_buffer.push(Move::new(white_king_square, to, CAPTURE_FLAG));
-                    }
-                }
-
-                /* castling */
-
-
-                let has_kingside_castle_rights = self.castling_rights.intersects(CastlingRights::WHITE_KINGSIDE);
-                let has_queenside_castle_rights = self.castling_rights.intersects(CastlingRights::WHITE_QUEENSIDE);
-                let in_check = self.board.is_square_attacked_by(white_king_square, Black);
-
-                if has_kingside_castle_rights && !in_check {
-                    let kingside_castle_path_open = (nonempty_squares & WHITE_KINGSIDE_CASTLE_BITS).empty();
-
-                    if kingside_castle_path_open {
-                        let mut castle_path_is_safe: bool = true;
-
-                        for sq in WHITE_KINGSIDE_CASTLE_BITS {
-                            if self.board.is_square_attacked_by(sq, Black) {
-                                castle_path_is_safe = false;
-                            }
-                        }
-
-                        if castle_path_is_safe {
-                            move_buffer.push(Move::new(white_king_square, Square::new(1), KING_CASTLE_FLAG));
+                    for sq in WHITE_KINGSIDE_CASTLE_BITS {
+                        if self.board.is_square_attacked_by(sq, Black) {
+                            castle_path_is_safe = false;
                         }
                     }
-                }
 
-                if has_queenside_castle_rights && !in_check {
-                    let queenside_castle_path_open = (nonempty_squares & WHITE_QUEENSIDE_CASTLE_BITS).empty();
-
-                    if queenside_castle_path_open {
-                        let mut castle_path_is_safe: bool = true;
-
-                        for sq in WHITE_QUEENSIDE_CASTLE_BITS {
-                            if self.board.is_square_attacked_by(sq, Black) {
-                                castle_path_is_safe = false;
-                            }
-                        }
-
-                        if castle_path_is_safe {
-                            move_buffer.push(Move::new(white_king_square, Square::new(5), QUEEN_CASTLE_FLAG));
-                        }
+                    if castle_path_is_safe {
+                        move_buffer.push(Move::new(king_square, Square::new(1), KING_CASTLE_FLAG));
                     }
                 }
-
-
             }
 
+            if has_queenside_castle_rights && !in_check {
+                let queenside_castle_path_open = (all_pieces & WHITE_QUEENSIDE_CASTLE_BITS).empty();
 
+                if queenside_castle_path_open {
+                    let mut castle_path_is_safe: bool = true;
 
+                    for sq in WHITE_QUEENSIDE_CASTLE_BITS {
+                        if self.board.is_square_attacked_by(sq, Black) {
+                            castle_path_is_safe = false;
+                        }
+                    }
+
+                    if castle_path_is_safe {
+                        move_buffer.push(Move::new(king_square, Square::new(5), QUEEN_CASTLE_FLAG));
+                    }
+                }
+            }
         }
     }
 }

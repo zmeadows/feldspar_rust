@@ -126,6 +126,9 @@ impl Square {
     pub fn idx(self) -> usize { return self.0 as usize; }
     pub fn unwrap(self) -> u32 { return self.0; }
 
+    pub fn rank(self) -> u32 { return self.0/8 + 1; }
+    pub fn file(self) -> u32 { return 7 - self.0 % 8; }
+
     pub fn from_rank_file(rank: u32, file: u32) -> Option<Square> {
         let idx = (rank - 1) * 8 + file;
         if idx < 64 {

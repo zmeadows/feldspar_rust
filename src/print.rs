@@ -61,13 +61,13 @@ impl Board {
         let mut bkg_color = "black";
         for row in chars.chunks(8) {
             match bkg_color {
-                "black" => bkg_color = "white",
+                "black" => bkg_color = "red",
                 _ => bkg_color = "black"
             }
             for x in row {
-                print!("{}", x.to_string().color("blue").on_color(bkg_color).bold());
+                print!("{}", x.to_string().color("white").on_color(bkg_color).bold());
                 match bkg_color {
-                    "black" => bkg_color = "white",
+                    "black" => bkg_color = "red",
                     _ => bkg_color = "black"
                 }
             }

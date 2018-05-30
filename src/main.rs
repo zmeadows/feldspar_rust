@@ -28,7 +28,7 @@ fn main() {
     // BLACK_KINGSIDE_CASTLE_BITS.print();
     // BLACK_QUEENSIDE_CASTLE_BITS.print();
 
-    let g = Game::from_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
+    let g = Game::from_fen("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
     if (g.is_some()) {
         g.unwrap().board.get_pieces(Color::Black, PieceType::Knight).print();
         g.unwrap().board.get_pieces(Color::White, PieceType::Knight).print();
