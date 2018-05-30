@@ -22,6 +22,19 @@ impl Board {
         }
     }
 
+    pub fn empty_position() -> Board {
+        return Board {
+            pieces: [ Bitboard::new(0), Bitboard::new(0),
+                      Bitboard::new(0), Bitboard::new(0),
+                      Bitboard::new(0), Bitboard::new(0),
+                      Bitboard::new(0), Bitboard::new(0),
+                      Bitboard::new(0), Bitboard::new(0),
+                      Bitboard::new(0), Bitboard::new(0)],
+            occupied: [ Bitboard::new(0), Bitboard::new(0) ],
+            unoccupied: Bitboard::new(0xFFFFFFFFFFFFFFFF)
+        }
+    }
+
     pub fn get_pieces(&self, color: Color, ptype: PieceType) -> Bitboard {
         let idx = 2 * ptype as usize + color as usize;
         return self.pieces[idx];
