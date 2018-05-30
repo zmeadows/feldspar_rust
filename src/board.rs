@@ -57,11 +57,6 @@ impl Board {
         return self.unoccupied;
     }
 
-    // pub fn update(&mut self, color: Color, ptype: PieceType, newBB: Bitboard) {
-    //     let idx = 2 * (ptype as usize) + (color as usize);
-    //     self.0[idx] = newBB;
-    // }
-
     pub fn color_at(&self, sq: Square) -> Option<Color> {
         let bit = sq.bitrep();
 
