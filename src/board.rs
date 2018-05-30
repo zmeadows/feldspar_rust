@@ -40,6 +40,11 @@ impl Board {
         return self.pieces[idx];
     }
 
+    pub fn get_pieces_mut(&mut self, color: Color, ptype: PieceType) -> &mut Bitboard {
+        let idx = 2 * ptype as usize + color as usize;
+        return &mut self.pieces[idx];
+    }
+
     pub fn occupied_by(&self, color: Color) -> Bitboard {
         return self.occupied[color as usize];
     }
