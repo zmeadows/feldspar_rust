@@ -9,6 +9,7 @@ mod print; // use print::*;
 mod moves; // use moves::*;
 mod tables; use tables::*;
 mod game; use game::*;
+mod bitboard; use bitboard::*;
 
 fn main() {
     let b = Board::starting_position();
@@ -28,7 +29,10 @@ fn main() {
     // BLACK_KINGSIDE_CASTLE_BITS.print();
     // BLACK_QUEENSIDE_CASTLE_BITS.print();
 
-    let g = Game::from_fen("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
+    use Color::*;
+    use PieceType::*;
+
+    let g = Game::from_fen("rn3bnr/ppp1pppp/6k1/3p4/2PPq3/N2b4/PP2PPPP/RQB1KBNR w KQ - 1 1");
     if (g.is_some()) {
         g.unwrap().board.get_pieces(Color::Black, PieceType::Knight).print();
         g.unwrap().board.get_pieces(Color::White, PieceType::Knight).print();
@@ -39,6 +43,11 @@ fn main() {
         g.unwrap().board.occupied_by(Color::Black).print();
         g.unwrap().board.unoccupied().print();
         g.unwrap().board.print();
+        let opRQ = g.unwrap().board.get_pieces(White,Queen) | g.unwrap().board.get_pieces(White,Bishop);
+        (xray_bishop_attacks( g.unwrap().board.occupied(),
+                           g.unwrap().board.occupied_by(Black),
+                           g.unwrap().board.get_king_square(Black)) & opRQ).print();
     }
+
 
 }

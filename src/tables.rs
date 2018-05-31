@@ -1,4 +1,5 @@
 use core::*;
+use bitboard::*;
 
 pub const RANK1: Bitboard = Bitboard::new(255);
 pub const RANK2: Bitboard = Bitboard::new(65280);
@@ -900,6 +901,7 @@ pub fn get_queen_rays(square: Square, occupied: Bitboard) -> Bitboard
 
 pub fn ray_between_squares(sqA: Square, sqB: Square) -> Bitboard
 {
+    //TODO: turn this into a lookup table
     let sqBbit = sqB.bitrep();
 
     let mut ray = get_positive_ray(sqA, Direction::N, sqBbit);
@@ -927,4 +929,56 @@ pub fn ray_between_squares(sqA: Square, sqB: Square) -> Bitboard
     if (ray & sqBbit).nonempty() { return ray; }
 
     return Bitboard::new(0);
+}
+
+pub fn diagonal_ray_between_squares(sqA: Square, sqB: Square) -> Bitboard
+{
+    //TODO: turn this into a lookup table
+    let sqBbit = sqB.bitrep();
+
+    let mut ray = get_positive_ray(sqA, Direction::NE, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_positive_ray(sqA, Direction::NW, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_negative_ray(sqA, Direction::SW, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_negative_ray(sqA, Direction::SE, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    return Bitboard::new(0);
+}
+
+pub fn nondiagonal_ray_between_squares(sqA: Square, sqB: Square) -> Bitboard
+{
+    //TODO: turn this into a lookup table
+    let sqBbit = sqB.bitrep();
+
+    let mut ray = get_positive_ray(sqA, Direction::N, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_positive_ray(sqA, Direction::E, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_negative_ray(sqA, Direction::S, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_negative_ray(sqA, Direction::W, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    return Bitboard::new(0);
+}
+
+pub fn xray_rook_attacks(occ: Bitboard, mut blockers: Bitboard, rook_square: Square) -> Bitboard {
+   let attacks = get_rook_rays(rook_square, occ);
+   blockers &= attacks;
+   return attacks ^ get_rook_rays(rook_square, occ ^ blockers);
+}
+
+pub fn xray_bishop_attacks(occ: Bitboard, mut blockers: Bitboard, bishop_square: Square) -> Bitboard {
+   let attacks = get_bishop_rays(bishop_square, occ);
+   blockers &= attacks;
+   return attacks ^ get_bishop_rays(bishop_square, occ ^ blockers);
 }

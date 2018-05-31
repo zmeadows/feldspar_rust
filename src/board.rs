@@ -1,4 +1,5 @@
 use core::*;
+use bitboard::*;
 use tables::*;
 
 #[derive(Debug, PartialEq, Clone, Copy)]

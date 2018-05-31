@@ -1,7 +1,10 @@
 use core::*;
+use bitboard::*;
 use moves::*;
 use board::*;
 use tables::*;
+
+use std::collections::HashMap;
 
 bitflags! {
     pub struct CastlingRights: u32 {
@@ -149,7 +152,8 @@ impl Game {
 
         let empty_squares   = self.board.unoccupied();
         let all_pieces      = self.board.occupied();
-        let opponent_pieces = if self.to_move == White { self.board.occupied_by(Black) } else { self.board.occupied_by(White) };
+        let friendly_pieces = self.board.occupied_by(color_to_move);
+        let opponent_pieces = self.board.occupied_by(!color_to_move);
 
         let king_square     = self.board.get_king_square(color_to_move);
         let king_attackers = self.board.attackers(king_square, opponent_color);
@@ -179,12 +183,34 @@ impl Game {
             }
         }
 
+        let mut pinned = Bitboard::new(0);
+        // TODO: fill up pinned bitboard.
+        {
+            let opRQ = self.board.get_pieces(opponent_color, Rook) | self.board.get_pieces(opponent_color, Queen);
+            let mut pinner = xray_rook_attacks(all_pieces, friendly_pieces, king_square) & opRQ;
+            for pinner_square in pinner {
+                pinned |= ray_between_squares(pinner_square, king_square) & friendly_pieces;
+            }
+
+            let opBQ = self.board.get_pieces(opponent_color, Bishop) | self.board.get_pieces(opponent_color, Queen);
+            pinner = xray_bishop_attacks(all_pieces, friendly_pieces, king_square) & opBQ;
+            for pinner_square in pinner {
+                pinned |= ray_between_squares(pinner_square, king_square) & friendly_pieces;
+            }
+        }
+
+        let not_king_bit = !king_square.bitrep();
+
+        // OPTIMIZE: https://chessprogramming.wikispaces.com/Checks+and+Pinned+Pieces+(Bitboards)
+
+        // MOVE GENERATION FOR UNPINNED PIECES
+
         /*********/
         /* PAWNS */
         /*********/
         {
-            let pawns = self.board.get_pieces(color_to_move, Pawn);
-            let advanced_pawns = if color_to_move == White { pawns.shifted_up() } else { pawns.shifted_down() };
+            let unpinned_pawns = self.board.get_pieces(color_to_move, Pawn) & !pinned;
+            let advanced_pawns = if color_to_move == White { unpinned_pawns.shifted_up() } else { unpinned_pawns.shifted_down() };
             let double_advanced_pawns = if color_to_move == White { advanced_pawns.shifted_up() } else { advanced_pawns.shifted_down() };
             let delta_pawn_single_push: i32 = if self.to_move == White { -8 } else { 8 };
             let delta_pawn_double_push: i32 = if self.to_move == White { -16 } else { 16 };
@@ -208,14 +234,21 @@ impl Game {
 
             // double pushes
             for to in double_advanced_pawns & empty_squares & double_pawn_push_rank & quiet_mask {
+
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_double_push) as u32);
+
                 move_buffer.push(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
             }
 
             // captures (and capture-promotions)
-            for from in pawns
+            for from in unpinned_pawns
             {
-                for to in PAWN_ATTACKS[color_to_move as usize][from.idx()] & opponent_pieces & capture_mask
+                let pawn_attacks = match self.ep_square {
+                    None => PAWN_ATTACKS[color_to_move as usize][from.idx()] & opponent_pieces & capture_mask,
+                    Some(ep) => PAWN_ATTACKS[color_to_move as usize][from.idx()] & ( (opponent_pieces | ep.bitrep()) & capture_mask)
+                };
+
+                for to in pawn_attacks
                 {
                     if to.rank() == promotion_rank {
                         move_buffer.push(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
@@ -237,7 +270,7 @@ impl Game {
         /* KNIGHTS */
         /***********/
         {
-            for from in self.board.get_pieces(color_to_move, Knight)
+            for from in self.board.get_pieces(color_to_move, Knight) & !pinned
             {
                 let knight_moves = KNIGHT_TABLE[from.idx()];
 

@@ -2,7 +2,9 @@ extern crate colored;
 use print::colored::Colorize;
 
 use core::*;
+use bitboard::*;
 use board::*;
+use moves::*;
 
 impl Piece {
     fn to_unicode(&self) -> &'static str {
