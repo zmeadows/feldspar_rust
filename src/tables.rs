@@ -897,3 +897,34 @@ pub fn get_queen_rays(square: Square, occupied: Bitboard) -> Bitboard
     return get_bishop_rays(square, occupied)
          | get_rook_rays(square, occupied);
 }
+
+pub fn ray_between_squares(sqA: Square, sqB: Square) -> Bitboard
+{
+    let sqBbit = sqB.bitrep();
+
+    let mut ray = get_positive_ray(sqA, Direction::N, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_positive_ray(sqA, Direction::E, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_negative_ray(sqA, Direction::S, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_negative_ray(sqA, Direction::W, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_positive_ray(sqA, Direction::NE, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_positive_ray(sqA, Direction::NW, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_negative_ray(sqA, Direction::SW, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    ray = get_negative_ray(sqA, Direction::SE, sqBbit);
+    if (ray & sqBbit).nonempty() { return ray; }
+
+    return Bitboard::new(0);
+}

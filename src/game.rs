@@ -144,40 +144,40 @@ impl Game {
         use Color::*;
         use PieceType::*;
 
-        let empty_squares = self.board.unoccupied();
-        let all_pieces = self.board.occupied();
-        let opponent_pieces = if self.to_move == White { self.board.occupied_by(Black) } else { self.board.occupied_by(White) };
-        let color_to_move = self.to_move;
-        let opponent_color = !color_to_move;
-        let king_square = self.board.get_king_square(color_to_move);
+        let color_to_move   = self.to_move;
+        let opponent_color  = !color_to_move;
 
+        let empty_squares   = self.board.unoccupied();
+        let all_pieces      = self.board.occupied();
+        let opponent_pieces = if self.to_move == White { self.board.occupied_by(Black) } else { self.board.occupied_by(White) };
+
+        let king_square     = self.board.get_king_square(color_to_move);
         let king_attackers = self.board.attackers(king_square, opponent_color);
         let checkers = king_attackers.population();
         let in_check = checkers > 0;
+        let king_moves = KING_TABLE[king_square.idx()];
+        let king_danger_squares = self.board.attacked(!color_to_move, true);
 
-        // when the king is in check, this gives the squares we may capture on
-        let mut capture_mask = Bitboard::new(0xFFFFFFFFFFFFFFFF);
-
-        // when the king is in check, this gives the squares we move on to block the check
-        let mut push_mask    = Bitboard::new(0xFFFFFFFFFFFFFFFF);
-
-        /*
         if checkers > 1 {
-            // only king moves possible
-        } else if checkers == 1 {
-            // if ony one checker, we can evade check by capturing it
+            for to in king_moves & empty_squares & !king_danger_squares {
+                move_buffer.push(Move::new(king_square, to, QUIET_FLAG));
+            }
+            return;
+        }
+
+        let mut capture_mask = opponent_pieces;
+        let mut quiet_mask = empty_squares;
+
+        if checkers == 1 {
             capture_mask = king_attackers;
 
-            // If the piece giving check is a slider, we can evade check by blocking it
-            let checker_square = checkers.bitscan_forward();
-            if board.at(checker_square).is_slider() {
-                push_mask = opponent_slider_rays_to_square(king_square, board);
+            let checker_square = king_attackers.bitscan_forward();
+            if self.board.piece_at(checker_square).unwrap().ptype.is_slider() {
+                quiet_mask = ray_between_squares(king_square, checker_square);
             } else {
-                // if the piece is not a slider, we can only evade check by capturing
-                push_mask = Bitboard(0); // empty bitboard
+                quiet_mask = Bitboard::new(0);
             }
         }
-        */
 
         /*********/
         /* PAWNS */
@@ -192,11 +192,11 @@ impl Game {
             let promotion_rank = if self.to_move == White { 8 } else { 1 };
 
             // single pushes (and promotions)
-            for to in advanced_pawns & empty_squares & push_mask
+            for to in advanced_pawns & empty_squares & quiet_mask
             {
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_single_push) as u32);
 
-                if to.rank() == 8 {
+                if to.rank() == promotion_rank {
                     move_buffer.push(Move::new(from, to, BISHOP_PROMO_FLAG));
                     move_buffer.push(Move::new(from, to, KNIGHT_PROMO_FLAG));
                     move_buffer.push(Move::new(from, to, ROOK_PROMO_FLAG));
@@ -207,7 +207,7 @@ impl Game {
             }
 
             // double pushes
-            for to in double_advanced_pawns & empty_squares & double_pawn_push_rank {
+            for to in double_advanced_pawns & empty_squares & double_pawn_push_rank & quiet_mask {
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_double_push) as u32);
                 move_buffer.push(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
             }
@@ -215,7 +215,7 @@ impl Game {
             // captures (and capture-promotions)
             for from in pawns
             {
-                for to in PAWN_ATTACKS[color_to_move as usize][from.idx()] & opponent_pieces
+                for to in PAWN_ATTACKS[color_to_move as usize][from.idx()] & opponent_pieces & capture_mask
                 {
                     if to.rank() == promotion_rank {
                         move_buffer.push(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
@@ -242,12 +242,12 @@ impl Game {
                 let knight_moves = KNIGHT_TABLE[from.idx()];
 
                 /* quiets */
-                for to in knight_moves & empty_squares {
+                for to in knight_moves & empty_squares & quiet_mask {
                     move_buffer.push(Move::new(from, to, QUIET_FLAG));
                 }
 
                 /* captures */
-                for to in knight_moves & opponent_pieces {
+                for to in knight_moves & opponent_pieces & capture_mask {
                     move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
@@ -262,12 +262,12 @@ impl Game {
             let bishop_moves = get_bishop_rays(from, all_pieces);
 
             /* quiets */
-            for to in bishop_moves & empty_squares {
+            for to in bishop_moves & empty_squares & quiet_mask {
                 move_buffer.push(Move::new(from, to, QUIET_FLAG));
             }
 
             /* captures */
-            for to in bishop_moves & opponent_pieces {
+            for to in bishop_moves & opponent_pieces & capture_mask {
                 move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
             }
         }
@@ -281,12 +281,12 @@ impl Game {
             let rook_moves = get_rook_rays(from, all_pieces);
 
             /* quiets */
-            for to in rook_moves & empty_squares {
+            for to in rook_moves & empty_squares & quiet_mask {
                 move_buffer.push(Move::new(from, to, QUIET_FLAG));
             }
 
             /* captures */
-            for to in rook_moves & opponent_pieces {
+            for to in rook_moves & opponent_pieces & capture_mask {
                 move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
             }
         }
@@ -315,16 +315,13 @@ impl Game {
         /********/
 
         {
-            let king_moves = KING_TABLE[king_square.idx()];
-            let king_danger_squares = self.board.attacked(!color_to_move, true);
-
             /* quiets */
             for to in king_moves & empty_squares & !king_danger_squares {
                 move_buffer.push(Move::new(king_square, to, QUIET_FLAG));
             }
 
             /* captures */
-            for to in king_moves & opponent_pieces & !king_danger_squares {
+            for to in king_moves & opponent_pieces & capture_mask {
                 move_buffer.push(Move::new(king_square, to, CAPTURE_FLAG));
             }
 
