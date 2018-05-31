@@ -98,33 +98,27 @@ impl Board {
         self.get_pieces(color, PieceType::King).bitscan_forward()
     }
 
-    pub fn is_square_attacked_by(&self, square: Square, color: Color) -> bool {
+    pub fn attackers(&self, square: Square, color: Color) -> Bitboard {
         use PieceType::*;
 
-        if (PAWN_ATTACKS[!color as usize][square.idx()] & self.get_pieces(color, Pawn)).nonempty() {
-            return true;
-        } else if (KNIGHT_TABLE[square.idx()] & self.get_pieces(color, Knight)).nonempty() {
-            return true;
-        } else if (KING_TABLE[square.idx()] & self.get_pieces(color, King)).nonempty() {
-            return true;
-        }
+        let mut attackers: Bitboard = Bitboard::new(0);
+
+        attackers |= PAWN_ATTACKS[!color as usize][square.idx()] & self.get_pieces(color, Pawn);
+        attackers |= KNIGHT_TABLE[square.idx()] & self.get_pieces(color, Knight);
+        attackers |= KING_TABLE[square.idx()] & self.get_pieces(color, King);
 
         let occupied = self.occupied();
 
         let bishops_queens = self.get_pieces(color, Queen) | self.get_pieces(color, Bishop);
-        if (get_bishop_rays(square, occupied) & bishops_queens).nonempty() {
-            return true;
-        }
+        attackers |= get_bishop_rays(square, occupied) & bishops_queens;
 
         let rooks_queens = self.get_pieces(color, Queen) | self.get_pieces(color, Rook);
-        if (get_rook_rays(square, occupied) & rooks_queens).nonempty() {
-            return true;
-        }
+        attackers |= get_rook_rays(square, occupied) & rooks_queens;
 
-        return false;
+        return attackers;
     }
 
-    pub fn attacked_by(&self, attacking_color: Color, remove_king: bool) -> Bitboard {
+    pub fn attacked(&self, attacking_color: Color, remove_king: bool) -> Bitboard {
         use PieceType::*;
 
         let defending_color = !attacking_color;

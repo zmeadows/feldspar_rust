@@ -24,6 +24,8 @@ impl Bitboard {
     pub fn shifted_right(self) -> Bitboard { return Bitboard(self.0 << 1); }
     pub fn shifted_down(self) -> Bitboard { return Bitboard(self.0 >> 8); }
     pub fn shifted_up(self) -> Bitboard { return Bitboard(self.0 << 8); }
+
+    pub fn population(self) -> u32 { self.0.count_ones() }
 }
 
 impl BitAnd for Bitboard {
@@ -187,6 +189,18 @@ impl PieceType {
         use self::PieceType::*;
         static PIECETYPES: [PieceType;  6] = [Pawn, Knight, Bishop, Rook, Queen, King];
         PIECETYPES.into_iter()
+    }
+
+    pub fn is_slider(self) -> bool {
+        use self::PieceType::*;
+        match self {
+            Pawn   => return false,
+            Knight => return false,
+            Bishop => return true,
+            Rook   => return true,
+            Queen  => return true,
+            King   => return false
+        }
     }
 }
 
