@@ -183,25 +183,22 @@ impl Game {
             }
         }
 
+        let not_king_bit = !king_square.bitrep();
+
         let mut pinned = Bitboard::new(0);
-        // TODO: fill up pinned bitboard.
         {
             let opRQ = self.board.get_pieces(opponent_color, Rook) | self.board.get_pieces(opponent_color, Queen);
             let mut pinner = xray_rook_attacks(all_pieces, friendly_pieces, king_square) & opRQ;
             for pinner_square in pinner {
-                pinned |= ray_between_squares(pinner_square, king_square) & friendly_pieces;
+                pinned |= ray_between_squares(pinner_square, king_square) & friendly_pieces & not_king_bit;
             }
 
             let opBQ = self.board.get_pieces(opponent_color, Bishop) | self.board.get_pieces(opponent_color, Queen);
             pinner = xray_bishop_attacks(all_pieces, friendly_pieces, king_square) & opBQ;
             for pinner_square in pinner {
-                pinned |= ray_between_squares(pinner_square, king_square) & friendly_pieces;
+                pinned |= ray_between_squares(pinner_square, king_square) & friendly_pieces & not_king_bit;
             }
         }
-
-        let not_king_bit = !king_square.bitrep();
-
-        // OPTIMIZE: https://chessprogramming.wikispaces.com/Checks+and+Pinned+Pieces+(Bitboards)
 
         // MOVE GENERATION FOR UNPINNED PIECES
 
