@@ -249,28 +249,27 @@ impl Game {
             // captures (and capture-promotions)
             for from in unpinned_pawns
             {
-                let pawn_attack_pattern = PAWN_ATTACKS[friendly_color as usize][from.idx()];
-                let capturable_squares = match self.ep_square {
-                    None => opponent_pieces,
-                    Some(ep) => opponent_pieces | ep.bitrep()
-                };
+                let pawn_attack_pattern = PAWN_ATTACKS[friendly_color as usize][from.idx()] & capture_mask;
 
-                for to in pawn_attack_pattern & capturable_squares & capture_mask
+                for to in pawn_attack_pattern & opponent_pieces
                 {
                     if to.rank() == promotion_rank {
                         move_buffer.push(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
                         move_buffer.push(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
                         move_buffer.push(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
                         move_buffer.push(Move::new(from, to, QUEEN_PROMO_CAPTURE_FLAG));
-                    } else if self.ep_square.is_some() && self.ep_square.unwrap() == to {
-                        // TODO: test for discovered checks after ep capture!
-                        move_buffer.push(Move::new(from, to, EP_CAPTURE_FLAG));
                     } else {
                         move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
                     }
                 }
-            }
 
+                match self.ep_square {
+                    Some(sq) => if (pawn_attack_pattern & sq.bitrep()).nonempty() {
+                                    move_buffer.push(Move::new(from, sq, EP_CAPTURE_FLAG));
+                                },
+                    None => {}
+                }
+            }
         }
 
         /***********/
