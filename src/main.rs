@@ -32,7 +32,7 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    let g = Game::from_fen("rnb1kbnr/pppp2pp/4p3/4q3/8/4Q3/PPPPPPPP/RNB1KBNR b KQkq - 1 1").unwrap();
+    let g = Game::from_fen("rnbqkb1r/pppppppp/8/5n2/3K4/8/PPPPPPPP/RNBQ1BNR w KQkq - 1 1").unwrap();
     //let g = Game::starting_position();
     g.board.get_pieces(Color::Black, PieceType::Knight).print();
     g.board.get_pieces(Color::White, PieceType::Knight).print();
@@ -46,6 +46,8 @@ fn main() {
     let mut x = Vec::new();
     g.generate_moves(&mut x);
     println!("{}", x.len());
+
+    for m in x { m.print(); }
 
 
 

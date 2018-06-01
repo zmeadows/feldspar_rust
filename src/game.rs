@@ -339,12 +339,12 @@ impl Game {
             let queen_moves = get_queen_rays(from, all_pieces);
 
             /* quiets */
-            for to in queen_moves & empty_squares {
+            for to in queen_moves & empty_squares & quiet_mask {
                 move_buffer.push(Move::new(from, to, QUIET_FLAG));
             }
 
             /* captures */
-            for to in queen_moves & opponent_pieces {
+            for to in queen_moves & opponent_pieces & capture_mask {
                 move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
             }
         }

@@ -77,3 +77,9 @@ impl Board {
         }
     }
 }
+
+impl Move {
+    pub fn print(&self) {
+        println!("FROM: {}, TO: {}", self.from().idx(), self.to().idx());
+    }
+}

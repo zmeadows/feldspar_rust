@@ -132,7 +132,7 @@ impl Board {
         };
 
         let attacking_pieces = self.occupied_by(attacking_color);
-        let all_pieces = defending_pieces & attacking_pieces;
+        let all_pieces = defending_pieces | attacking_pieces;
 
         for from in self.get_pieces(attacking_color, Pawn) {
             attacked |= PAWN_ATTACKS[attacking_color as usize][from.idx()];
