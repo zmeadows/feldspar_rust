@@ -184,75 +184,80 @@ impl Game {
         /* BISHOPS */
         /***********/
 
-        for from in self.board.get_pieces(friendly_color, Bishop) & !pinned
         {
-            let bishop_moves = get_bishop_rays(from, occupied_squares);
+            let friendly_bishops = self.board.get_pieces(friendly_color, Bishop);
 
-            /* quiets */
-            for to in bishop_moves & empty_squares & quiet_mask {
-                move_buffer.push(Move::new(from, to, QUIET_FLAG));
+            // UNPINNED
+            for from in friendly_bishops & !pinned
+            {
+                let bishop_moves = get_bishop_rays(from, occupied_squares);
+
+                // quiets
+                for to in bishop_moves & empty_squares & quiet_mask {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
+
+                // captures
+                for to in bishop_moves & opponent_pieces & capture_mask {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
             }
 
-            /* captures */
-            for to in bishop_moves & opponent_pieces & capture_mask {
-                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
-            }
-        }
+            // PINNED
+            for from in friendly_bishops & pinned_diagonally
+            {
+                let bishop_moves = get_bishop_rays(from, occupied_squares) & *diag_pin_map.get(&from.idx()).unwrap();
 
-        /******************/
-        /* PINNED BISHOPS */
-        /******************/
+                // quiets
+                for to in bishop_moves & empty_squares & quiet_mask {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
 
-        for from in self.board.get_pieces(friendly_color, Bishop) & pinned_diagonally
-        {
-            let bishop_moves = get_bishop_rays(from, occupied_squares) & *diag_pin_map.get(&from.idx()).unwrap();
-
-            /* quiets */
-            for to in bishop_moves & empty_squares & quiet_mask {
-                move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                // captures
+                for to in bishop_moves & opponent_pieces & capture_mask {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
             }
 
-            /* captures */
-            for to in bishop_moves & opponent_pieces & capture_mask {
-                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
-            }
         }
 
         /*********/
         /* ROOKS */
         /*********/
 
-        for from in self.board.get_pieces(friendly_color, Rook) & !pinned
         {
-            let rook_moves = get_rook_rays(from, occupied_squares);
+            let friendly_rooks = self.board.get_pieces(friendly_color, Rook);
 
-            /* quiets */
-            for to in rook_moves & empty_squares & quiet_mask {
-                move_buffer.push(Move::new(from, to, QUIET_FLAG));
+            // unpinned
+            for from in friendly_rooks & !pinned
+            {
+                let rook_moves = get_rook_rays(from, occupied_squares);
+
+                /* quiets */
+                for to in rook_moves & empty_squares & quiet_mask {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
+
+                /* captures */
+                for to in rook_moves & opponent_pieces & capture_mask {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
             }
 
-            /* captures */
-            for to in rook_moves & opponent_pieces & capture_mask {
-                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
-            }
-        }
+            // pinned
+            for from in friendly_rooks & pinned_nondiagonally
+            {
+                let rook_moves = get_rook_rays(from, occupied_squares) & *nondiag_pin_map.get(&from.idx()).unwrap();
 
-        /****************/
-        /* PINNED ROOKS */
-        /****************/
+                /* quiets */
+                for to in rook_moves & empty_squares & quiet_mask {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
 
-        for from in self.board.get_pieces(friendly_color, Rook) & pinned_nondiagonally
-        {
-            let rook_moves = get_rook_rays(from, occupied_squares) & *nondiag_pin_map.get(&from.idx()).unwrap();
-
-            /* quiets */
-            for to in rook_moves & empty_squares & quiet_mask {
-                move_buffer.push(Move::new(from, to, QUIET_FLAG));
-            }
-
-            /* captures */
-            for to in rook_moves & opponent_pieces & capture_mask {
-                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                /* captures */
+                for to in rook_moves & opponent_pieces & capture_mask {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
             }
         }
 
@@ -262,10 +267,17 @@ impl Game {
 
         for from in self.board.get_pieces(friendly_color, Queen) & pinned
         {
-            let queen_moves = get_queen_rays(from, occupied_squares) &
-                (
-                    *nondiag_pin_map.get(&from.idx()).unwrap() | *diag_pin_map.get(&from.idx()).unwrap()
-                );
+            let mut queen_moves = get_queen_rays(from, occupied_squares);
+
+            match nondiag_pin_map.get(&from.idx()) {
+                Some(pin_mask) => queen_moves &= *pin_mask,
+                None => {}
+            }
+
+            match diag_pin_map.get(&from.idx()) {
+                Some(pin_mask) => queen_moves &= *pin_mask,
+                None => {}
+            }
 
             /* quiets */
             for to in queen_moves & empty_squares & quiet_mask {
