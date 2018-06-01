@@ -33,7 +33,7 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    let g = Game::from_fen("bk2r3/7q/8/3QRB2/r2QKN1r/3PQR2/8/1b2r2q w - - 1 1").unwrap();
+    let g = Game::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 1").unwrap();
     //let g = Game::starting_position();
     g.board.get_pieces(Color::Black, PieceType::Knight).print();
     g.board.get_pieces(Color::White, PieceType::Knight).print();

@@ -50,10 +50,9 @@ impl Game {
             }
         }
 
-        let not_king_bit = !king_square.bitrep();
-
-        let mut diag_pin_map = HashMap::new();
-        let mut nondiag_pin_map = HashMap::new();
+        //TODO: make pin maps static
+        let mut diag_pin_map: [Bitboard; 64] = [Bitboard::new(0xFFFFFFFFFFFFFFFF); 64];
+        let mut nondiag_pin_map: [Bitboard; 64] = [Bitboard::new(0xFFFFFFFFFFFFFFFF); 64];
         let mut pinned_diagonally = Bitboard::new(0);
         let mut pinned_nondiagonally = Bitboard::new(0);
 
@@ -63,7 +62,7 @@ impl Game {
             for pinner_square in pinner {
                 let connecting_bits = ray_between_squares(king_square, pinner_square);
                 let pinned_bit = connecting_bits & friendly_pieces;
-                nondiag_pin_map.insert(pinned_bit.bitscan_forward().idx(), connecting_bits);
+                nondiag_pin_map[pinned_bit.bitscan_forward().idx()] = connecting_bits;
                 assert!(pinned_bit.population() == 1);
                 pinned_nondiagonally |= pinned_bit;
             }
@@ -73,7 +72,7 @@ impl Game {
             for pinner_square in pinner {
                 let connecting_bits = ray_between_squares(king_square, pinner_square);
                 let pinned_bit = connecting_bits & friendly_pieces;
-                diag_pin_map.insert(pinned_bit.bitscan_forward().idx(), connecting_bits);
+                diag_pin_map[pinned_bit.bitscan_forward().idx()] = connecting_bits;
                 assert!(pinned_bit.population() == 1);
                 pinned_diagonally |= pinned_bit;
             }
@@ -95,9 +94,9 @@ impl Game {
 
             let advanced_pawns =
                 if friendly_color == White {
-                    advanceable_pawns.shifted_up()
+                    advanceable_pawns.shifted_up() & empty_squares
                 } else {
-                    advanceable_pawns.shifted_down()
+                    advanceable_pawns.shifted_down() & empty_squares
                 };
 
             let double_advanced_pawns =
@@ -123,6 +122,7 @@ impl Game {
             }
 
             // double pushes
+            // BUGFIX: don't double push through other pieces!
             for to in double_advanced_pawns & empty_squares & double_pawn_push_rank & quiet_mask {
 
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_double_push) as u32);
@@ -206,7 +206,7 @@ impl Game {
             // PINNED
             for from in friendly_bishops & pinned_diagonally
             {
-                let bishop_moves = get_bishop_rays(from, occupied_squares) & *diag_pin_map.get(&from.idx()).unwrap();
+                let bishop_moves = get_bishop_rays(from, occupied_squares) & diag_pin_map[from.idx()];
 
                 // quiets
                 for to in bishop_moves & empty_squares & quiet_mask {
@@ -247,7 +247,7 @@ impl Game {
             // pinned
             for from in friendly_rooks & pinned_nondiagonally
             {
-                let rook_moves = get_rook_rays(from, occupied_squares) & *nondiag_pin_map.get(&from.idx()).unwrap();
+                let rook_moves = get_rook_rays(from, occupied_squares) & nondiag_pin_map[from.idx()];
 
                 /* quiets */
                 for to in rook_moves & empty_squares & quiet_mask {
@@ -264,29 +264,38 @@ impl Game {
         /*********/
         /* QUEEN */
         /*********/
-
-        for from in self.board.get_pieces(friendly_color, Queen) & pinned
         {
-            let mut queen_moves = get_queen_rays(from, occupied_squares);
+            let friendly_queens = self.board.get_pieces(friendly_color, Queen);
 
-            match nondiag_pin_map.get(&from.idx()) {
-                Some(pin_mask) => queen_moves &= *pin_mask,
-                None => {}
+            for from in friendly_queens & !pinned
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares);
+
+                /* quiets */
+                for to in queen_moves & empty_squares & quiet_mask {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
+
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
             }
 
-            match diag_pin_map.get(&from.idx()) {
-                Some(pin_mask) => queen_moves &= *pin_mask,
-                None => {}
-            }
+            for from in friendly_queens & pinned
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares)
+                    & nondiag_pin_map[from.idx()] & diag_pin_map[from.idx()];
 
-            /* quiets */
-            for to in queen_moves & empty_squares & quiet_mask {
-                move_buffer.push(Move::new(from, to, QUIET_FLAG));
-            }
+                /* quiets */
+                for to in queen_moves & empty_squares & quiet_mask {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
 
-            /* captures */
-            for to in queen_moves & opponent_pieces & capture_mask {
-                move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
             }
         }
 

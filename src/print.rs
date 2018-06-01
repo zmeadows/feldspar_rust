@@ -60,21 +60,27 @@ impl Board {
             }
         }
 
+        let mut row_idx = 8;
         let mut bkg_color = "black";
+        println!("   a b c d e f g h");
         for row in chars.chunks(8) {
             match bkg_color {
-                "black" => bkg_color = "red",
-                _ => bkg_color = "black"
+                "blue" => bkg_color = "white",
+                _ => bkg_color = "blue"
             }
+            print!("{} ", row_idx.to_string());
             for x in row {
-                print!("{}", x.to_string().color("white").on_color(bkg_color).bold());
+                print!("{}", x.to_string().color("black").on_color(bkg_color).bold());
                 match bkg_color {
-                    "black" => bkg_color = "red",
-                    _ => bkg_color = "black"
+                    "blue" => bkg_color = "white",
+                    _ => bkg_color = "blue"
                 }
             }
+            print!(" {}", row_idx.to_string());
+            row_idx -= 1;
             println!();
         }
+        println!("   a b c d e f g h");
     }
 }
 
