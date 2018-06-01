@@ -147,20 +147,20 @@ impl Game {
         use Color::*;
         use PieceType::*;
 
-        let color_to_move   = self.to_move;
-        let opponent_color  = !color_to_move;
+        let friendly_color   = self.to_move;
+        let opponent_color  = !friendly_color;
 
         let empty_squares   = self.board.unoccupied();
         let all_pieces      = self.board.occupied();
-        let friendly_pieces = self.board.occupied_by(color_to_move);
-        let opponent_pieces = self.board.occupied_by(!color_to_move);
+        let friendly_pieces = self.board.occupied_by(friendly_color);
+        let opponent_pieces = self.board.occupied_by(!friendly_color);
 
-        let king_square     = self.board.get_king_square(color_to_move);
+        let king_square     = self.board.get_king_square(friendly_color);
         let king_attackers = self.board.attackers(king_square, opponent_color);
         let checkers = king_attackers.population();
         let in_check = checkers > 0;
         let king_moves = KING_TABLE[king_square.idx()];
-        let king_danger_squares = self.board.attacked(!color_to_move, true);
+        let king_danger_squares = self.board.attacked(!friendly_color, true);
 
         if checkers > 1 {
             for to in king_moves & empty_squares & !king_danger_squares {
@@ -185,20 +185,29 @@ impl Game {
 
         let not_king_bit = !king_square.bitrep();
 
-        let mut pinned = Bitboard::new(0);
+        let mut pinned_diagonally = Bitboard::new(0);
+        let mut pinned_nondiagonally = Bitboard::new(0);
         {
             let opRQ = self.board.get_pieces(opponent_color, Rook) | self.board.get_pieces(opponent_color, Queen);
             let mut pinner = xray_rook_attacks(all_pieces, friendly_pieces, king_square) & opRQ;
             for pinner_square in pinner {
-                pinned |= ray_between_squares(pinner_square, king_square) & friendly_pieces & not_king_bit;
+                let connecting_bits = ray_between_squares(king_square, pinner_square);
+                let pinned_bit = connecting_bits & friendly_pieces;
+                assert!(pinned_bit.population() == 1);
+                pinned_nondiagonally |= pinned_bit;
             }
 
             let opBQ = self.board.get_pieces(opponent_color, Bishop) | self.board.get_pieces(opponent_color, Queen);
             pinner = xray_bishop_attacks(all_pieces, friendly_pieces, king_square) & opBQ;
             for pinner_square in pinner {
-                pinned |= ray_between_squares(pinner_square, king_square) & friendly_pieces & not_king_bit;
+                let connecting_bits = ray_between_squares(king_square, pinner_square);
+                let pinned_bit = connecting_bits & friendly_pieces;
+                assert!(pinned_bit.population() == 1);
+                pinned_diagonally |= pinned_bit;
             }
         }
+
+        let pinned = pinned_diagonally | pinned_nondiagonally;
 
         // MOVE GENERATION FOR UNPINNED PIECES
 
@@ -206,9 +215,9 @@ impl Game {
         /* PAWNS */
         /*********/
         {
-            let unpinned_pawns = self.board.get_pieces(color_to_move, Pawn) & !pinned;
-            let advanced_pawns = if color_to_move == White { unpinned_pawns.shifted_up() } else { unpinned_pawns.shifted_down() };
-            let double_advanced_pawns = if color_to_move == White { advanced_pawns.shifted_up() } else { advanced_pawns.shifted_down() };
+            let unpinned_pawns = self.board.get_pieces(friendly_color, Pawn) & !pinned;
+            let advanced_pawns = if friendly_color == White { unpinned_pawns.shifted_up() } else { unpinned_pawns.shifted_down() };
+            let double_advanced_pawns = if friendly_color == White { advanced_pawns.shifted_up() } else { advanced_pawns.shifted_down() };
             let delta_pawn_single_push: i32 = if self.to_move == White { -8 } else { 8 };
             let delta_pawn_double_push: i32 = if self.to_move == White { -16 } else { 16 };
             let double_pawn_push_rank = if self.to_move == White { RANK4 } else { RANK5 };
@@ -241,8 +250,8 @@ impl Game {
             for from in unpinned_pawns
             {
                 let pawn_attacks = match self.ep_square {
-                    None => PAWN_ATTACKS[color_to_move as usize][from.idx()] & opponent_pieces & capture_mask,
-                    Some(ep) => PAWN_ATTACKS[color_to_move as usize][from.idx()] & ( (opponent_pieces | ep.bitrep()) & capture_mask)
+                    None => PAWN_ATTACKS[friendly_color as usize][from.idx()] & opponent_pieces & capture_mask,
+                    Some(ep) => PAWN_ATTACKS[friendly_color as usize][from.idx()] & ( (opponent_pieces | ep.bitrep()) & capture_mask)
                 };
 
                 for to in pawn_attacks
@@ -267,7 +276,7 @@ impl Game {
         /* KNIGHTS */
         /***********/
         {
-            for from in self.board.get_pieces(color_to_move, Knight) & !pinned
+            for from in self.board.get_pieces(friendly_color, Knight) & !pinned
             {
                 let knight_moves = KNIGHT_TABLE[from.idx()];
 
@@ -287,7 +296,7 @@ impl Game {
         /* BISHOPS */
         /***********/
 
-        for from in self.board.get_pieces(color_to_move, Bishop)
+        for from in self.board.get_pieces(friendly_color, Bishop) & !pinned
         {
             let bishop_moves = get_bishop_rays(from, all_pieces);
 
@@ -306,7 +315,7 @@ impl Game {
         /* ROOKS */
         /*********/
 
-        for from in self.board.get_pieces(color_to_move, Rook)
+        for from in self.board.get_pieces(friendly_color, Rook) & !pinned
         {
             let rook_moves = get_rook_rays(from, all_pieces);
 
@@ -325,7 +334,7 @@ impl Game {
         /* QUEEN */
         /*********/
 
-        for from in self.board.get_pieces(color_to_move, Queen)
+        for from in self.board.get_pieces(friendly_color, Queen) & !pinned
         {
             let queen_moves = get_queen_rays(from, all_pieces);
 

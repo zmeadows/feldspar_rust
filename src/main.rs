@@ -32,20 +32,20 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    let g = Game::from_fen("rn4n1/ppp1pppp/4r1k1/3pq3/2PP4/N2b2b1/PP2PPPP/RQB1KBNR b KQ - 1 1");
-    if (g.is_some()) {
-        g.unwrap().board.get_pieces(Color::Black, PieceType::Knight).print();
-        g.unwrap().board.get_pieces(Color::White, PieceType::Knight).print();
-        g.unwrap().board.get_pieces(Color::White, PieceType::Pawn).print();
-        g.unwrap().board.get_pieces(Color::Black, PieceType::Pawn).print();
-        g.unwrap().board.occupied().print();
-        g.unwrap().board.occupied_by(Color::White).print();
-        g.unwrap().board.occupied_by(Color::Black).print();
-        g.unwrap().board.unoccupied().print();
-        g.unwrap().board.print();
-        let mut x = Vec::new();
-        g.unwrap().generate_moves(&mut x);
-    }
+    let g = Game::from_fen("rnb1kbnr/pppp2pp/4p3/4q3/8/4Q3/PPPPPPPP/RNB1KBNR b KQkq - 1 1").unwrap();
+    //let g = Game::starting_position();
+    g.board.get_pieces(Color::Black, PieceType::Knight).print();
+    g.board.get_pieces(Color::White, PieceType::Knight).print();
+    g.board.get_pieces(Color::White, PieceType::Pawn).print();
+    g.board.get_pieces(Color::Black, PieceType::Pawn).print();
+    g.board.occupied().print();
+    g.board.occupied_by(Color::White).print();
+    g.board.occupied_by(Color::Black).print();
+    g.board.unoccupied().print();
+    g.board.print();
+    let mut x = Vec::new();
+    g.generate_moves(&mut x);
+    println!("{}", x.len());
 
 
 
