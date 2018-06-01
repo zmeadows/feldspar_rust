@@ -264,9 +264,10 @@ impl Game {
                 }
 
                 match self.ep_square {
-                    Some(sq) => if (pawn_attack_pattern & sq.bitrep()).nonempty() {
-                                    move_buffer.push(Move::new(from, sq, EP_CAPTURE_FLAG));
-                                },
+                    Some(sq) =>
+                        if (pawn_attack_pattern & sq.bitrep()).nonempty() {
+                            move_buffer.push(Move::new(from, sq, EP_CAPTURE_FLAG));
+                        },
                     None => {}
                 }
             }

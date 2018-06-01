@@ -19,7 +19,7 @@ impl Square {
 
     pub fn rank(self) -> u32 { return self.0/8 + 1; }
 
-    pub fn file(self) -> u32 { return 7 - self.0 % 8; }
+    pub fn file(self) -> u32 { return 8 - self.0 % 8; }
 
     pub fn from_rank_file(rank: u32, file: u32) -> Option<Square> {
         let idx = (rank - 1) * 8 + file;
@@ -61,6 +61,30 @@ impl Square {
                 }
             }
         }
+    }
+
+    pub fn to_algebraic(&self) -> String {
+        let mut alg_str: String = String::new();
+
+        let file = match self.file() {
+            1 => 'a',
+            2 => 'b',
+            3 => 'c',
+            4 => 'd',
+            5 => 'e',
+            6 => 'f',
+            7 => 'g',
+            8 => 'h',
+            _ => 'X'
+        };
+
+        use std::char::from_digit;
+        let rank = from_digit(self.rank(), 10).unwrap();
+
+        alg_str.push(file);
+        alg_str.push(rank);
+
+        return alg_str;
     }
 }
 
