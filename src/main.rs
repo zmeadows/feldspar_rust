@@ -10,6 +10,7 @@ mod moves; // use moves::*;
 mod tables; use tables::*;
 mod game; use game::*;
 mod bitboard; use bitboard::*;
+mod movegen; use movegen::*;
 
 fn main() {
     let b = Board::starting_position();
@@ -32,7 +33,7 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    let g = Game::from_fen("rnbqkb1r/pppppppp/8/5n2/3K4/8/PPPPPPPP/RNBQ1BNR w KQkq - 1 1").unwrap();
+    let g = Game::from_fen("rnb1qbnr/pppp1ppp/4R2k/8/8/4K3/PPPPPPPP/RNBQ2N1 w KQkq - 1 1").unwrap();
     //let g = Game::starting_position();
     g.board.get_pieces(Color::Black, PieceType::Knight).print();
     g.board.get_pieces(Color::White, PieceType::Knight).print();
