@@ -249,12 +249,13 @@ impl Game {
             // captures (and capture-promotions)
             for from in unpinned_pawns
             {
-                let pawn_attacks = match self.ep_square {
-                    None => PAWN_ATTACKS[friendly_color as usize][from.idx()] & opponent_pieces & capture_mask,
-                    Some(ep) => PAWN_ATTACKS[friendly_color as usize][from.idx()] & ( (opponent_pieces | ep.bitrep()) & capture_mask)
+                let pawn_attack_pattern = PAWN_ATTACKS[friendly_color as usize][from.idx()];
+                let capturable_squares = match self.ep_square {
+                    None => opponent_pieces,
+                    Some(ep) => opponent_pieces | ep.bitrep()
                 };
 
-                for to in pawn_attacks
+                for to in pawn_attack_pattern & capturable_squares & capture_mask
                 {
                     if to.rank() == promotion_rank {
                         move_buffer.push(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
