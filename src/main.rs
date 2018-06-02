@@ -45,7 +45,9 @@ fn main() {
     g.board.unoccupied().print();
     g.board.print();
     let mut x = Vec::new();
-    g.generate_moves(&mut x);
+    let mut gen = MoveGen::new();
+
+    gen.fill_move_buffer(&g, &mut x);
     println!("{}", x.len());
 
     for m in x { m.print(); }
