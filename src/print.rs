@@ -86,6 +86,6 @@ impl Board {
 
 impl Move {
     pub fn print(&self) {
-        println!("FROM: {}, TO: {}", self.from().to_algebraic(), self.to().to_algebraic());
+        println!("{}{}", self.from().to_algebraic(), self.to().to_algebraic());
     }
 }

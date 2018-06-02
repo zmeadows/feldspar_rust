@@ -15,13 +15,13 @@ impl MoveGen {
         return MoveGen { diag_pin_map: [Bitboard::new(0); 64], nondiag_pin_map: [Bitboard::new(0); 64] };
     }
 
-    pub fn fill_move_buffer(&mut self, game: &Game, move_buffer: &mut Vec<Move>) {
-        move_buffer.clear();
+    pub fn move_list(&mut self, game: &Game) -> Vec<Move> {
+        let mut move_buffer = Vec::new();
 
         use Color::*;
         use PieceType::*;
 
-        let friendly_color   = game.to_move;
+        let friendly_color  = game.to_move;
         let opponent_color  = !friendly_color;
 
         let empty_squares    = game.board.unoccupied();
@@ -29,22 +29,22 @@ impl MoveGen {
         let friendly_pieces  = game.board.occupied_by(friendly_color);
         let opponent_pieces  = game.board.occupied_by(!friendly_color);
 
-        let king_square     = game.board.get_king_square(friendly_color);
-        let king_attackers = game.board.attackers(king_square, opponent_color);
-        let check_multiplicity = king_attackers.population();
-        let in_check = check_multiplicity > 0;
-        let king_moves = KING_TABLE[king_square.idx()];
+        let king_square         = game.board.get_king_square(friendly_color);
+        let king_attackers      = game.board.attackers(king_square, opponent_color);
+        let check_multiplicity  = king_attackers.population();
+        let in_check            = check_multiplicity > 0;
+        let king_moves          = KING_TABLE[king_square.idx()];
         let king_danger_squares = game.board.attacked(!friendly_color, true);
 
         if check_multiplicity > 1 {
             for to in king_moves & empty_squares & !king_danger_squares {
                 move_buffer.push(Move::new(king_square, to, QUIET_FLAG));
             }
-            return;
+            return move_buffer;
         }
 
-        let mut capture_mask = opponent_pieces;
-        let mut quiet_mask = empty_squares;
+        let mut capture_mask = Bitboard::new(u64::max_value());
+        let mut quiet_mask = Bitboard::new(u64::max_value());
 
         if check_multiplicity == 1 {
             capture_mask = king_attackers;
@@ -157,10 +157,11 @@ impl MoveGen {
 
                 match game.ep_square {
                     //TODO: en-passante discovered check test
-                    Some(sq) =>
+                    Some(sq) => {
                         if (pawn_attack_pattern & sq.bitrep()).nonempty() {
                             move_buffer.push(Move::new(from, sq, EP_CAPTURE_FLAG));
-                        },
+                        }
+                    },
                     None => {}
                 }
             }
@@ -358,7 +359,6 @@ impl MoveGen {
             }
         }
 
-        // MOVE GENERATION FOR PINNED PIECES
-
+        return move_buffer;
     }
 }

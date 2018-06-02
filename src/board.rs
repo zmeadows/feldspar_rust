@@ -5,8 +5,7 @@ use tables::*;
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Board {
     pieces: [Bitboard;12],
-    occupied: [Bitboard;2],
-    unoccupied: Bitboard,
+    occupied: [Bitboard;2]
 }
 
 impl Board {
@@ -18,8 +17,7 @@ impl Board {
                       Bitboard::new(0x0000000000000081), Bitboard::new(0x8100000000000000),
                       Bitboard::new(0x0000000000000008), Bitboard::new(0x0800000000000000),
                       Bitboard::new(0x0000000000000010), Bitboard::new(0x1000000000000000)],
-            occupied: [ Bitboard::new(0x000000000000FFFF), Bitboard::new(0xFFFF000000000000) ],
-            unoccupied: Bitboard::new(0x0000FFFFFFFF0000)
+            occupied: [ Bitboard::new(0x000000000000FFFF), Bitboard::new(0xFFFF000000000000) ]
         }
     }
 
@@ -31,8 +29,7 @@ impl Board {
                       Bitboard::new(0), Bitboard::new(0),
                       Bitboard::new(0), Bitboard::new(0),
                       Bitboard::new(0), Bitboard::new(0)],
-            occupied: [ Bitboard::new(0), Bitboard::new(0) ],
-            unoccupied: Bitboard::new(0xFFFFFFFFFFFFFFFF)
+            occupied: [ Bitboard::new(0), Bitboard::new(0) ]
         }
     }
 
@@ -50,11 +47,14 @@ impl Board {
         let bit = square.bitrep();
         *self.get_pieces_mut(color, ptype) |= bit;
         self.occupied[color as usize] |= bit;
-        self.unoccupied &= !bit;
     }
 
     pub fn occupied_by(&self, color: Color) -> Bitboard {
         return self.occupied[color as usize];
+    }
+
+    pub fn occupied_by_mut(&mut self, color: Color) -> &mut Bitboard {
+        return &mut self.occupied[color as usize];
     }
 
     pub fn occupied(&self) -> Bitboard {
@@ -62,7 +62,7 @@ impl Board {
     }
 
     pub fn unoccupied(&self) -> Bitboard {
-        return self.unoccupied;
+        return !self.occupied();
     }
 
     pub fn color_at(&self, sq: Square) -> Option<Color> {

@@ -1,7 +1,11 @@
 #![feature(const_fn)]
+#[macro_use] extern crate prettytable;
 
 #[macro_use]
 extern crate bitflags;
+
+use std::mem;
+
 
 mod core; use core::*;
 mod board; use board::*;
@@ -11,6 +15,7 @@ mod tables; use tables::*;
 mod game; use game::*;
 mod bitboard; use bitboard::*;
 mod movegen; use movegen::*;
+mod perft; use perft::*;
 
 fn main() {
     let b = Board::starting_position();
@@ -33,24 +38,12 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    let g = Game::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 1").unwrap();
-    //let g = Game::starting_position();
-    g.board.get_pieces(Color::Black, PieceType::Knight).print();
-    g.board.get_pieces(Color::White, PieceType::Knight).print();
-    g.board.get_pieces(Color::White, PieceType::Pawn).print();
-    g.board.get_pieces(Color::Black, PieceType::Pawn).print();
-    g.board.occupied().print();
-    g.board.occupied_by(Color::White).print();
-    g.board.occupied_by(Color::Black).print();
-    g.board.unoccupied().print();
-    g.board.print();
-    let mut x = Vec::new();
-    let mut gen = MoveGen::new();
+    //let mut g = Game::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 1").unwrap();
+    let g = Game::starting_position();
 
-    gen.fill_move_buffer(&g, &mut x);
-    println!("{}", x.len());
+    // g.board.print();
 
-    for m in x { m.print(); }
+    perft(&g,4);
 
 
 
