@@ -60,6 +60,9 @@ impl MoveGen {
         let mut pinned_diagonally = Bitboard::new(0);
         let mut pinned_nondiagonally = Bitboard::new(0);
 
+        // NOTE: stored *_pin_map arrays could potentially be a source of strange bugs.
+        // NOTE: easy to debug though, just clear them each call and see if results change.
+
         {
             let opRQ = game.board.get_pieces(opponent_color, Rook) | game.board.get_pieces(opponent_color, Queen);
             let mut pinner = xray_rook_attacks(occupied_squares, friendly_pieces, king_square) & opRQ;
@@ -126,7 +129,6 @@ impl MoveGen {
             }
 
             // double pushes
-            // BUGFIX: don't double push through other pieces!
             for to in double_advanced_pawns & empty_squares & double_pawn_push_rank & quiet_mask {
 
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_double_push) as u32);
