@@ -53,8 +53,6 @@ impl Game {
         use PieceType::*;
         use Color::*;
 
-        println!("what");
-
         let mut board_str = String::new();
         let mut empty_tally = 0;
 
@@ -93,6 +91,10 @@ impl Game {
                 }
                 None => empty_tally += 1
             }
+        }
+
+        if empty_tally > 0 {
+            board_str.push_str(&empty_tally.to_string());
         }
 
         let to_move_str = match self.to_move {
@@ -369,5 +371,28 @@ impl Game {
 
         self.to_move = !self.to_move;
 
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use game::*;
+    #[test]
+    fn test_fen() {
+        let fen_strings: Vec<&'static str> = vec![
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+            "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2",
+            "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"
+        ];
+
+        for fen in fen_strings.iter() {
+            let g = Game::from_fen(fen).unwrap();
+            g.board.print();
+            println!("{}", g.to_fen());
+            assert!(&g.to_fen() == fen);
+        }
     }
 }
