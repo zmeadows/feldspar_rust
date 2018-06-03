@@ -41,7 +41,7 @@ impl MoveGen {
             for to in king_moves & empty_squares & !king_danger_squares {
                 move_buffer.push(Move::new(king_square, to, QUIET_FLAG));
             }
-            for to in king_moves & occupied_squares & !king_danger_squares {
+            for to in king_moves & opponent_pieces & !king_danger_squares {
                 move_buffer.push(Move::new(king_square, to, CAPTURE_FLAG));
             }
             return move_buffer;

@@ -39,11 +39,14 @@ fn main() {
     // let mut g = Game::from_fen("rnbqk1nr/pppp1ppp/8/4p3/1b1P4/8/PPPQPPPP/RNB1KBNR w KQkq - 0 1").unwrap();
     // println!("{}", g.to_fen());
 
-    let mut g = Game::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    let mut g = Game::from_fen("2nk1N1b/Bbr1Pp2/p5p1/1B2p3/N3P3/p1r2P2/QPP4P/3RK2n b - - 0 1").unwrap();
 
-    qperft_debug(g.clone());
+    g.board.get_pieces(Black,Rook).print();
+    g.board.get_pieces(White,Rook).print();
 
-    if false {
+    // qperft_debug(g.clone());
+
+    if true {
         g.board.print();
         let mut move_gen = MoveGen::new();
         let move_buffer = move_gen.move_list(&g);
