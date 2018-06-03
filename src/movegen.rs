@@ -186,9 +186,9 @@ impl MoveGen {
                             let mut board_copy = game.board.clone();
 
                             *board_copy.get_pieces_mut(opponent_color, Pawn) &= !captured_sq.bitrep();
-                            *board_copy.get_pieces_mut(friendly_color, Pawn) &= !from.bitrep();
+                            *board_copy.get_pieces_mut(friendly_color, Pawn) ^= (from.bitrep() | ep_capture_square.bitrep());
                             *board_copy.occupied_by_mut(opponent_color) &= !captured_sq.bitrep();
-                            *board_copy.occupied_by_mut(friendly_color) &= !from.bitrep();
+                            *board_copy.occupied_by_mut(friendly_color) ^= (from.bitrep() | ep_capture_square.bitrep());
 
                             let attackers = board_copy.attackers(king_square, opponent_color);
                             if attackers.empty() {

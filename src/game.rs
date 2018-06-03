@@ -149,7 +149,6 @@ impl Game {
 
             let decrement_square = |sq: &mut Square, n: u32| {
                 if sq.unwrap() > 0 {
-                    println!("sq: {}", sq.idx());
                     *sq = Square::new(sq.unwrap() - n);
                 }
             };
@@ -314,15 +313,17 @@ impl Game {
 
                 if is_promotion {
                     *self.board.get_pieces_mut(moving_color, Pawn) &= !to_bit;
-                    if flag & KNIGHT_PROMO_FLAG > 0 {
+
+                    if flag == KNIGHT_PROMO_FLAG || flag == KNIGHT_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Knight) |= to_bit;
-                    } else if flag & BISHOP_PROMO_FLAG > 0 {
+                    } else if flag == BISHOP_PROMO_FLAG || flag == BISHOP_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Bishop) |= to_bit;
-                    } else if flag & ROOK_PROMO_FLAG > 0 {
+                    } else if flag == ROOK_PROMO_FLAG || flag == ROOK_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Rook) |= to_bit;
-                    } else if flag & QUEEN_PROMO_FLAG > 0 {
+                    } else if flag == QUEEN_PROMO_FLAG || flag == QUEEN_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Queen) |= to_bit;
                     }
+
                 }
 
             },

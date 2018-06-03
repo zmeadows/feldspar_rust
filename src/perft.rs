@@ -348,11 +348,11 @@ pub fn qperft_debug(game: Game) {
         println!("depth: {}", depth);
         let qperft_results = qperft_divide(game.clone(), depth);
         let feldspar_results = perft_divide(game.clone(), depth);
+        println!("{} {}", qperft_results.len(), feldspar_results.len());
 
         if (qperft_results.len() != feldspar_results.len()) {
             game.board.print();
             println!("{}", game.to_fen());
-            println!("{} {}", qperft_results.len(), feldspar_results.len());
 
             for (m,s) in &qperft_results {
                 match feldspar_results.get(m) {
@@ -379,6 +379,8 @@ pub fn qperft_debug(game: Game) {
             match feldspar_results.get(&m) {
                 Some(fs) =>
                     if *fs != s {
+                        println!("{} {} {}", m, s, fs);
+
                         match move_from_algebraic(game.clone(), m) {
                             Some(mv) => {
                                 mv.print();
@@ -387,7 +389,7 @@ pub fn qperft_debug(game: Game) {
                                 println!("{}", game_copy.to_fen());
                                 game_copy.board.print();
                                 qperft_debug(game_copy);
-                                break;
+                                return;
                             },
 
                             None => { println!("unexpected weirdness"); }
