@@ -231,6 +231,7 @@ impl Game {
         let to_bit         = to_sq.bitrep();
         let from_to_bit    = from_bit | to_bit;
         let is_capture     = m.is_capture();
+        let is_promotion   = m.is_promotion();
         let flag           = m.flag();
         let moving_color   = self.to_move;
         let opponent_color = !moving_color;
@@ -302,6 +303,19 @@ impl Game {
                     } else {
                         *self.board.get_pieces_mut(opponent_color, captured_piece.unwrap().ptype) ^= to_bit;
                         *self.board.occupied_by_mut(opponent_color) ^= to_bit;
+                    }
+                }
+
+                if is_promotion {
+                    *self.board.get_pieces_mut(moving_color, Pawn) &= !to_bit;
+                    if flag & KNIGHT_PROMO_FLAG > 0 {
+                        *self.board.get_pieces_mut(moving_color, Knight) |= to_bit;
+                    } else if flag & BISHOP_PROMO_FLAG > 0 {
+                        *self.board.get_pieces_mut(moving_color, Bishop) |= to_bit;
+                    } else if flag & ROOK_PROMO_FLAG > 0 {
+                        *self.board.get_pieces_mut(moving_color, Rook) |= to_bit;
+                    } else if flag & QUEEN_PROMO_FLAG > 0 {
+                        *self.board.get_pieces_mut(moving_color, Queen) |= to_bit;
                     }
                 }
 
