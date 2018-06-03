@@ -39,10 +39,7 @@ fn main() {
     // let mut g = Game::from_fen("rnbqk1nr/pppp1ppp/8/4p3/1b1P4/8/PPPQPPPP/RNB1KBNR w KQkq - 0 1").unwrap();
     // println!("{}", g.to_fen());
 
-    let mut g = Game::from_fen("2nk1N1b/Bbr1Pp2/p5p1/1B2p3/N3P3/p1r2P2/QPP4P/3RK2n b - - 0 1").unwrap();
-
-    g.board.get_pieces(Black,Rook).print();
-    g.board.get_pieces(White,Rook).print();
+    let mut g = Game::from_fen("8/7k/8/8/8/1K6/p7/8 w - - 0 1").unwrap();
 
     // qperft_debug(g.clone());
 
