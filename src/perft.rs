@@ -341,6 +341,7 @@ pub fn qperft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
 pub fn qperft_debug(game: Game) {
 
     for depth in 3 .. 7 {
+        println!("depth: {}", depth);
         let qperft_results = qperft_divide(game.clone(), depth);
         let feldspar_results = perft_divide(game.clone(), depth);
 

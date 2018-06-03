@@ -36,16 +36,15 @@ fn main() {
     use PieceType::*;
 
     //let mut g = Game::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap();
-    let mut g = Game::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
     // let mut g = Game::from_fen("rnbqk1nr/pppp1ppp/8/4p3/1b1P4/8/PPPQPPPP/RNB1KBNR w KQkq - 0 1").unwrap();
     // println!("{}", g.to_fen());
 
-    g.board.print();
+    let mut g = Game::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
 
-    qperft_debug(g.clone());
-
+    perft(g.clone(), 5);
 
     if false {
+        g.board.print();
         let mut move_gen = MoveGen::new();
         let move_buffer = move_gen.move_list(&g);
 
