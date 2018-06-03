@@ -16,14 +16,15 @@ bitflags! {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Game {
     pub board: Board,
     pub to_move: Color,
     pub ep_square: Option<Square>,
     pub castling_rights: CastlingRights,
     pub fifty_move_count: u8,
-    pub moves: u16
+    pub moves: u16,
+    pub history: Vec<Move>
 }
 
 impl Game {
@@ -35,6 +36,7 @@ impl Game {
             castling_rights: CastlingRights::all(),
             fifty_move_count: 0,
             moves: 1,
+            history: Vec::new()
         }
     }
 
@@ -45,7 +47,8 @@ impl Game {
             ep_square: None,
             castling_rights: CastlingRights::empty(),
             fifty_move_count: 0,
-            moves: 1
+            moves: 1,
+            history: Vec::new()
         }
     }
 
@@ -232,6 +235,16 @@ impl Game {
         let moving_color   = self.to_move;
         let opponent_color = !moving_color;
 
+        let king_square = self.board.get_king_square(opponent_color);
+        // if (to_sq == king_square) {
+        //     println!("Invalid king capture move!");
+        //     self.board.print();
+        //     for m in &self.history {
+        //         m.print();
+        //     }
+        //     println!("{}", self.to_fen());
+        // }
+
         use Color::*;
         use PieceType::*;
 
@@ -336,19 +349,40 @@ impl Game {
                 }
             },
 
+            //TODO: check castle flag and move rook
             King => {
                 *self.board.get_pieces_mut(self.to_move, King) ^= from_to_bit;
                 *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
 
                 match moving_color {
                     White => {
-                            self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE);
-                            self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE);
+                        self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE);
+                        self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE);
+                        if (flag == KING_CASTLE_FLAG) {
+                            let rook_bit = Square::new(0).bitrep() | Square::new(2).bitrep();
+                            *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
+                            *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
+                        }
+                        if (flag == QUEEN_CASTLE_FLAG) {
+                            let rook_bit = Square::new(7).bitrep() | Square::new(4).bitrep();
+                            *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
+                            *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
+                        }
                     }
 
                     Black => {
-                            self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE);
-                            self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE);
+                        self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE);
+                        self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE);
+                        if (flag == KING_CASTLE_FLAG) {
+                            let rook_bit = Square::new(56).bitrep() | Square::new(58).bitrep();
+                            *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
+                            *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
+                        }
+                        if (flag == QUEEN_CASTLE_FLAG) {
+                            let rook_bit = Square::new(63).bitrep() | Square::new(60).bitrep();
+                            *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
+                            *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
+                        }
                     }
                 }
 
@@ -370,6 +404,8 @@ impl Game {
         }
 
         self.to_move = !self.to_move;
+
+        self.history.push(m);
 
     }
 }

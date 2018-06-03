@@ -18,14 +18,14 @@ use prettytable::row::Row;
 const QPERFT_PATH: &'static str = "/Users/zac/Code/qperft/qperft";
 const MAX_PERFT_DEPTH: usize = 20;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct PerftContext {
     move_gen: MoveGen,
     game: Game,
     result: PerftResult
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct PerftResult {
     pub node_count  : [usize; MAX_PERFT_DEPTH],
     pub captures    : [usize; MAX_PERFT_DEPTH],
@@ -70,7 +70,7 @@ impl Add for PerftResult {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct NodeCountContext {
     move_gen: MoveGen,
     game: Game,
@@ -94,7 +94,7 @@ impl NodeCountContext {
         let move_buffer = self.move_gen.move_list(&self.game);
 
         for m in &move_buffer {
-            let game_copy = self.game;
+            let game_copy = self.game.clone();
             self.game.make_move(*m);
 
             if (current_depth == max_depth) {
@@ -118,10 +118,19 @@ impl PerftContext {
 
     fn go(&mut self, max_depth: usize, move_subset: Option<Vec<Move>>) -> PerftResult {
         self.go2(1, max_depth, move_subset);
-        return self.result;
+        return self.result.clone();
     }
 
     fn go2(&mut self, current_depth: usize, max_depth: usize, move_subset: Option<Vec<Move>>) {
+        let kings = self.game.board.get_pieces(self.game.to_move, PieceType::King);
+
+        // if (kings.empty()) {
+        //     println!("no king!");
+        //     self.game.board.print();
+        //     println!("{}", self.game.to_fen());
+        //     return;
+        // }
+
         let king_square         = self.game.board.get_king_square(self.game.to_move);
         let king_attackers      = self.game.board.attackers(king_square, !self.game.to_move);
         let check_multiplicity  = king_attackers.population();
@@ -141,12 +150,19 @@ impl PerftContext {
             return;
         }
 
+        //checkmate, sir/madam.
+        if move_buffer.len() == 0 && check_multiplicity == 0 {
+            println!("what?");
+            self.game.board.print();
+            return;
+        }
+
         if (current_depth > max_depth) {
             return;
         }
 
         for m in &move_buffer {
-            let game_copy = self.game;
+            let game_copy = self.game.clone();
             self.game.make_move(*m);
 
             self.result.node_count[current_depth] += 1;
@@ -180,7 +196,7 @@ pub fn perft_divide(game: Game, depth: usize) {
     let mut total = 0;
 
     for m in &move_buffer {
-        let mut game_copy = game;
+        let mut game_copy = game.clone();
         game_copy.make_move(*m);
         let mut nc = NodeCountContext::new(game_copy);
         nc.go(1,depth-1);
@@ -231,8 +247,10 @@ pub fn perft(game: Game, depth: usize) {
             move_subset_vec.push(m.clone());
         }
 
+        let game_clone = game.clone();
+
         threads.push(thread::spawn(move || {
-            let mut pc = PerftContext::new(game);
+            let mut pc = PerftContext::new(game_clone);
             return pc.go(depth, Some(move_subset_vec));
         }));
 

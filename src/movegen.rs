@@ -119,6 +119,12 @@ impl MoveGen {
             {
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_single_push) as u32);
 
+                // todo: don't do inner loop test, just separate move generation for pinned pawns.
+                if (from.bitrep() & pinned_nondiagonally).nonempty()
+                    && (to.bitrep() & self.nondiag_pin_map[from.idx()]).empty() {
+                        continue;
+                }
+
                 if to.rank() == promotion_rank {
                     move_buffer.push(Move::new(from, to, BISHOP_PROMO_FLAG));
                     move_buffer.push(Move::new(from, to, KNIGHT_PROMO_FLAG));
@@ -133,6 +139,11 @@ impl MoveGen {
             for to in double_advanced_pawns & empty_squares & double_pawn_push_rank & quiet_mask {
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_double_push) as u32);
 
+                if (from.bitrep() & pinned_nondiagonally).nonempty()
+                    && (to.bitrep() & self.nondiag_pin_map[from.idx()]).empty() {
+                        continue;
+                }
+
                 move_buffer.push(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
             }
 
@@ -141,7 +152,10 @@ impl MoveGen {
             // captures (and capture-promotions)
             for from in pawns_that_can_capture
             {
-                let pawn_attack_pattern = PAWN_ATTACKS[friendly_color as usize][from.idx()] & capture_mask;
+                let mut pawn_attack_pattern = PAWN_ATTACKS[friendly_color as usize][from.idx()] & capture_mask;
+                if (from.bitrep() & pinned_diagonally).nonempty() {
+                    pawn_attack_pattern &= self.diag_pin_map[from.idx()];
+                }
 
                 for to in pawn_attack_pattern & opponent_pieces
                 {
@@ -290,10 +304,26 @@ impl MoveGen {
                 }
             }
 
-            for from in friendly_queens & pinned & !(pinned_diagonally & pinned_nondiagonally)
+            let movable_pinned_queens = friendly_queens & pinned & !(pinned_diagonally & pinned_nondiagonally);
+
+            for from in movable_pinned_queens & pinned_diagonally
             {
-                let queen_moves = get_queen_rays(from, occupied_squares)
-                    & (self.nondiag_pin_map[from.idx()] | self.diag_pin_map[from.idx()]);
+                let queen_moves = get_queen_rays(from, occupied_squares) & self.diag_pin_map[from.idx()];
+
+                /* quiets */
+                for to in queen_moves & empty_squares & quiet_mask {
+                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                }
+
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+
+            for from in movable_pinned_queens & pinned_nondiagonally
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares) & self.nondiag_pin_map[from.idx()];
 
                 /* quiets */
                 for to in queen_moves & empty_squares & quiet_mask {
@@ -323,38 +353,61 @@ impl MoveGen {
             }
 
             /* castling */
-            let has_kingside_castle_rights = game.castling_rights.intersects(CastlingRights::WHITE_KINGSIDE);
-            let has_queenside_castle_rights = game.castling_rights.intersects(CastlingRights::WHITE_QUEENSIDE);
+            let has_kingside_castle_rights = match friendly_color {
+                White => game.castling_rights.intersects(CastlingRights::WHITE_KINGSIDE),
+                Black => game.castling_rights.intersects(CastlingRights::BLACK_KINGSIDE)
+            };
+
+            let has_queenside_castle_rights = match friendly_color {
+                White => game.castling_rights.intersects(CastlingRights::WHITE_QUEENSIDE),
+                Black => game.castling_rights.intersects(CastlingRights::BLACK_QUEENSIDE)
+            };
 
             if has_kingside_castle_rights && !in_check {
-                let kingside_castle_path_open = (occupied_squares & WHITE_KINGSIDE_CASTLE_BITS).empty();
+                let kingside_bits = match friendly_color {
+                    White => WHITE_KINGSIDE_CASTLE_BITS,
+                    Black => BLACK_KINGSIDE_CASTLE_BITS
+                };
+
+                let kingside_castle_path_open = (occupied_squares & kingside_bits).empty();
 
                 if kingside_castle_path_open {
                     let mut castle_path_is_safe: bool = true;
 
-                    if (WHITE_KINGSIDE_CASTLE_BITS & king_danger_squares).nonempty() {
+                    if (kingside_bits & king_danger_squares).nonempty() {
                         castle_path_is_safe = false;
                     }
 
                     if castle_path_is_safe {
-                        move_buffer.push(Move::new(king_square, Square::new(1), KING_CASTLE_FLAG));
+                        match friendly_color {
+                            White => move_buffer.push(Move::new(king_square, Square::new(1), KING_CASTLE_FLAG)),
+                            Black => move_buffer.push(Move::new(king_square, Square::new(57), KING_CASTLE_FLAG))
+                        }
                     }
                 }
             }
 
             if has_queenside_castle_rights && !in_check {
-                let queenside_castle_path_open = (occupied_squares & WHITE_QUEENSIDE_CASTLE_BITS).empty();
+                let queenside_bits = match friendly_color {
+                    White => WHITE_QUEENSIDE_CASTLE_BITS,
+                    Black => BLACK_QUEENSIDE_CASTLE_BITS
+                };
+
+                let queenside_castle_path_open = (occupied_squares & queenside_bits).empty();
 
                 if queenside_castle_path_open {
                     let mut castle_path_is_safe: bool = true;
 
 
-                    if (WHITE_QUEENSIDE_CASTLE_BITS & king_danger_squares).nonempty() {
+                    if (queenside_bits & king_danger_squares).nonempty() {
                         castle_path_is_safe = false;
                     }
 
                     if castle_path_is_safe {
-                        move_buffer.push(Move::new(king_square, Square::new(5), QUEEN_CASTLE_FLAG));
+                        match friendly_color {
+                            White => move_buffer.push(Move::new(king_square, Square::new(5), QUEEN_CASTLE_FLAG)),
+                            Black => move_buffer.push(Move::new(king_square, Square::new(61), QUEEN_CASTLE_FLAG))
+                        }
                     }
                 }
             }
