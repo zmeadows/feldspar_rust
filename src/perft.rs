@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::thread;
 use std::ops::Add;
 use std::os;
+use std::process::Command;
 
 use prettytable::Table;
 use prettytable::cell::Cell;
@@ -186,14 +187,12 @@ impl PerftContext {
     }
 }
 
-pub fn perft_divide(game: Game, depth: usize) {
+pub fn perft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
 
     let mut move_gen = MoveGen::new();
     let move_buffer = move_gen.move_list(&game);
 
     let mut results = HashMap::new();
-
-    let mut total = 0;
 
     for m in &move_buffer {
         let mut game_copy = game.clone();
@@ -203,30 +202,28 @@ pub fn perft_divide(game: Game, depth: usize) {
         let mut f = m.from().to_algebraic();
         f.push_str(&m.to().to_algebraic());
 
-        results.insert(f, nc.node_count);
-        total += nc.node_count;
+        results.insert(f, nc.node_count as u32);
     }
 
-    let mut results_vec: Vec<(&String, &usize)> = results.iter().collect();
-    results_vec.sort_by(|a, b| b.cmp(a));
+//     println!(r#"
+//   ___ _____   _____ ___  ___
+//  |   \_ _\ \ / /_ _|   \| __|
+//  | |) | | \ V / | || |) | _|
+//  |___/___| \_/ |___|___/|___|
+//         "#);
+// 
+// 
+//     game.board.print();
+//     println!("");
+//     println!("DEPTH = {}", depth);
+//     println!("");
+//     for (sq, nc) in &results_vec {
+//         println!("{}: {}", sq, nc);
+//     }
+// 
+//     println!("total: {}", total);
 
-    println!(r#"
-  ___ _____   _____ ___  ___
- |   \_ _\ \ / /_ _|   \| __|
- | |) | | \ V / | || |) | _|
- |___/___| \_/ |___|___/|___|
-        "#);
-
-
-    game.board.print();
-    println!("");
-    println!("DEPTH = {}", depth);
-    println!("");
-    for (sq, nc) in &results_vec {
-        println!("{}: {}", sq, nc);
-    }
-
-    println!("total: {}", total);
+    return results;
 }
 
 pub fn perft(game: Game, depth: usize) {
@@ -300,5 +297,98 @@ pub fn perft(game: Game, depth: usize) {
 
 }
 
+pub fn qperft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
+    let qperft_command = [
+        &depth.to_string(),
+        &["-", &(depth-1).to_string()].join(""),
+        &game.to_fen()
+    ];
+
+    let qperft_output = Command::new(QPERFT_PATH).args(&qperft_command).output().expect("");
+
+    let qperft_output_str: String = String::from_utf8_lossy(&qperft_output.stdout).to_string();
+
+    let delimit1: String = format!("perft( {}", depth-1);
+    let delimit2: String = format!("perft( {}", depth);
+
+    let mut save = false;
+    let mut relevant_lines = Vec::new();
+
+    for line in qperft_output_str.split("\n") {
+        if (line.contains(&delimit2)) {
+            save = false;
+        }
+
+        if save && line.chars().nth(0).unwrap() == '2' && line.chars().nth(1).unwrap() == '.' {
+            relevant_lines.push(line);
+        }
+
+        if (line.contains(&delimit1)) {
+            save = true;
+        }
+    }
+
+    let mut qperft_results_map = HashMap::new();
+
+    for line in &relevant_lines {
+        let split_line: Vec<&str> = line.split_whitespace().collect();
+        qperft_results_map.insert(split_line[1].to_string(), split_line[4].parse::<u32>().unwrap());
+    }
+
+    return qperft_results_map;
+}
+
 pub fn qperft_debug(game: Game) {
+
+    for depth in 3 .. 7 {
+        let qperft_results = qperft_divide(game.clone(), depth);
+        let feldspar_results = perft_divide(game.clone(), depth);
+
+        if (qperft_results.len() != feldspar_results.len()) {
+            game.board.print();
+            println!("{}", game.to_fen());
+
+            for (m,s) in &qperft_results {
+                match feldspar_results.get(m) {
+                    Some(fs) => {},
+                    None => {
+                        println!("feldspar missing move: {}", m);
+                    }
+                }
+            }
+
+            for (m,s) in feldspar_results {
+                match qperft_results.get(&m) {
+                    Some(fs) => {},
+                    None => {
+                        println!("feldspar generated illegal move: {}", m);
+                    }
+                }
+            }
+
+            return;
+        }
+
+        for (m,s) in qperft_results {
+            match feldspar_results.get(&m) {
+                Some(fs) =>
+                    if *fs != s {
+                        match move_from_algebraic(game.clone(), m) {
+                            Some(mv) => {
+                                mv.print();
+                                let mut game_copy = game.clone();
+                                game_copy.make_move(mv);
+                                println!("{}", game_copy.to_fen());
+                                game_copy.board.print();
+                                qperft_debug(game_copy);
+                                return;
+                            },
+
+                            None => { println!("unexpected weirdness"); }
+                        }
+                    },
+                None => {}
+            }
+        }
+    }
 }

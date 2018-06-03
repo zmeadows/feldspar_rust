@@ -96,6 +96,10 @@ impl Board {
     }
 
     pub fn get_king_square(&self, color: Color) -> Square {
+        let k = self.get_pieces(color, PieceType::King);
+        if k.empty() {
+            self.print();
+        }
         self.get_pieces(color, PieceType::King).bitscan_forward()
     }
 

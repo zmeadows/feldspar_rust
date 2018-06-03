@@ -41,6 +41,9 @@ impl MoveGen {
             for to in king_moves & empty_squares & !king_danger_squares {
                 move_buffer.push(Move::new(king_square, to, QUIET_FLAG));
             }
+            for to in king_moves & occupied_squares & !king_danger_squares {
+                move_buffer.push(Move::new(king_square, to, CAPTURE_FLAG));
+            }
             return move_buffer;
         }
 
@@ -348,7 +351,7 @@ impl MoveGen {
             }
 
             /* captures */
-            for to in king_moves & opponent_pieces & capture_mask {
+            for to in king_moves & opponent_pieces & !king_danger_squares {
                 move_buffer.push(Move::new(king_square, to, CAPTURE_FLAG));
             }
 
@@ -388,18 +391,22 @@ impl MoveGen {
             }
 
             if has_queenside_castle_rights && !in_check {
-                let queenside_bits = match friendly_color {
+                let queenside_path_bits = match friendly_color {
                     White => WHITE_QUEENSIDE_CASTLE_BITS,
                     Black => BLACK_QUEENSIDE_CASTLE_BITS
                 };
 
-                let queenside_castle_path_open = (occupied_squares & queenside_bits).empty();
+                let queenside_safety_bits = match friendly_color {
+                    White => WHITE_QUEENSIDE_CASTLE_SAFETY_BITS,
+                    Black => BLACK_QUEENSIDE_CASTLE_SAFETY_BITS
+                };
+
+                let queenside_castle_path_open = (occupied_squares & queenside_path_bits).empty();
 
                 if queenside_castle_path_open {
                     let mut castle_path_is_safe: bool = true;
 
-
-                    if (queenside_bits & king_danger_squares).nonempty() {
+                    if (queenside_safety_bits & king_danger_squares).nonempty() {
                         castle_path_is_safe = false;
                     }
 
@@ -416,3 +423,35 @@ impl MoveGen {
         return move_buffer;
     }
 }
+
+pub fn move_from_algebraic(game: Game, move_str: String) -> Option<Move> {
+    let from_str = move_str[..2].to_string();
+    let to_str = move_str[2..].to_string();
+
+    match Square::from_algebraic(&from_str) {
+        Some(from_sq) => {
+            match Square::from_algebraic(&to_str) {
+                Some(to_sq) => {
+                    let mut move_gen = MoveGen::new();
+                    let move_buffer = move_gen.move_list(&game);
+                    for m in move_buffer {
+                        if m.from() == from_sq && m.to() == to_sq {
+                            return Some(m);
+                        }
+                    }
+                }
+                None => {
+                    println!("invalid to string: {}", to_str);
+                    return None;
+                }
+            }
+        },
+        None => {
+            println!("invalid from string: {}", from_str);
+            return None;
+        }
+    }
+
+    return None;
+}
+

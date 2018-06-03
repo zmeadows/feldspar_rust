@@ -249,6 +249,17 @@ impl Game {
         use PieceType::*;
 
         let moved_piece = self.board.piece_at(from_sq).unwrap().ptype;
+
+        if (is_capture) {
+            match to_sq.idx() {
+                0 => self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE),
+                7 => self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE),
+                56 => self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE),
+                63 => self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE),
+                _ => {}
+            }
+        }
+
         let captured_piece =
             if flag == EP_CAPTURE_FLAG {
                 match opponent_color {

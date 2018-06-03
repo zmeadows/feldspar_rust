@@ -4,9 +4,6 @@
 #[macro_use] extern crate bitflags;
 extern crate num_cpus;
 
-use std::mem;
-
-
 mod core; use core::*;
 mod board; use board::*;
 mod print; // use print::*;
@@ -39,24 +36,26 @@ fn main() {
     use PieceType::*;
 
     //let mut g = Game::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap();
-    let mut g = Game::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q1p/1PPBBPPP/R3K2R b KQkq - 0 1").unwrap();
+    let mut g = Game::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
     // let mut g = Game::from_fen("rnbqk1nr/pppp1ppp/8/4p3/1b1P4/8/PPPQPPPP/RNB1KBNR w KQkq - 0 1").unwrap();
-    println!("{}", g.to_fen());
+    // println!("{}", g.to_fen());
 
-    perft(g,2);
+    g.board.print();
 
-    // g.board.print();
+    qperft_debug(g.clone());
 
 
-    // let mut move_gen = MoveGen::new();
-    // let move_buffer = move_gen.move_list(&g);
+    if false {
+        let mut move_gen = MoveGen::new();
+        let move_buffer = move_gen.move_list(&g);
 
-    // for m in &move_buffer {
-    //     let mut game_copy = g.clone();
-    //     game_copy.make_move(*m);
-    //     m.print();
-    //     game_copy.board.print();
-    // }
-    // println!("moves: {}", move_buffer.len());
+        for m in &move_buffer {
+            let mut game_copy = g.clone();
+            game_copy.make_move(*m);
+            m.print();
+            game_copy.board.print();
+        }
+        println!("moves: {}", move_buffer.len());
+    }
 }
 
