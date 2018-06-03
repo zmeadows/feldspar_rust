@@ -385,13 +385,17 @@ mod test {
             "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2",
             "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"
+            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
+            "r1bqkbnr/pp1npp1p/2pp2p1/8/2PPP3/2N1B3/PP3PPP/R2QKBNR b KQkq - 1 5",
+            "r2q1rk1/1p1nbppp/pn1pb3/4p3/4P1PP/1NN1BP2/PPPQ4/1K1R1B1R b - - 0 13",
+            "r2qnrk1/4bppp/1B1pb3/p3p1P1/1p2PP2/1N6/PPPQN2P/1K1R1B1R b - - 0 16",
+            "r1bq1rk1/ppp3bp/n2p2p1/3PpP1n/2P5/2N2NP1/PP2BP1P/R1BQ1RK1 b - - 0 10",
+            "5r2/4q1pk/2bp1p1p/1p2n3/3QPB2/1B1P3P/1PP3P1/r4RK1 w - - 0 25"
+
         ];
 
         for fen in fen_strings.iter() {
             let g = Game::from_fen(fen).unwrap();
-            g.board.print();
-            println!("{}", g.to_fen());
             assert!(&g.to_fen() == fen);
         }
     }

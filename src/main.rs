@@ -44,7 +44,7 @@ fn main() {
 
     // g.board.print();
 
-    // perft_divide(g,4);
+    perft_divide(g,5);
 
     // let mut move_gen = MoveGen::new();
     // let move_buffer = move_gen.move_list(&g);
@@ -58,6 +58,6 @@ fn main() {
 
 
 
-
+    // println!("moves: {}", move_buffer.len());
 }
 

@@ -15,6 +15,7 @@ use prettytable::Table;
 use prettytable::cell::Cell;
 use prettytable::row::Row;
 
+const QPERFT_PATH: &'static str = "/Users/zac/Code/qperft/qperft";
 const MAX_PERFT_DEPTH: usize = 20;
 
 #[derive(Clone, Copy)]
@@ -279,4 +280,7 @@ pub fn perft(game: Game, depth: usize) {
     game.board.print();
     table.printstd();
 
+}
+
+pub fn qperft_debug(game: Game) {
 }

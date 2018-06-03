@@ -240,6 +240,7 @@ impl MoveGen {
             {
                 let rook_moves = get_rook_rays(from, occupied_squares);
 
+
                 /* quiets */
                 for to in rook_moves & empty_squares & quiet_mask {
                     move_buffer.push(Move::new(from, to, QUIET_FLAG));
@@ -289,10 +290,10 @@ impl MoveGen {
                 }
             }
 
-            for from in friendly_queens & pinned
+            for from in friendly_queens & pinned & !(pinned_diagonally & pinned_nondiagonally)
             {
                 let queen_moves = get_queen_rays(from, occupied_squares)
-                    & self.nondiag_pin_map[from.idx()] & self.diag_pin_map[from.idx()];
+                    & (self.nondiag_pin_map[from.idx()] | self.diag_pin_map[from.idx()]);
 
                 /* quiets */
                 for to in queen_moves & empty_squares & quiet_mask {
