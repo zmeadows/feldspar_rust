@@ -9,8 +9,16 @@ pub struct Square(u32);
 
 impl Square {
     pub fn new(idx: u32) -> Square {
-        assert!(idx < 64, "Attempted to create Square with invalid index!");
+        assert!(idx < 64, "Attempted to create Square with invalid index! {}", idx);
         Square(idx)
+    }
+
+    pub fn all() -> Vec<Square> {
+        let mut v = Vec::new();
+        for x in 0 .. 64 {
+            v.push(Square::new(x));
+        }
+        return v;
     }
 
     pub fn idx(self) -> usize { return self.0 as usize; }

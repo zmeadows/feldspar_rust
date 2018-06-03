@@ -1,8 +1,8 @@
 #![feature(const_fn)]
-#[macro_use] extern crate prettytable;
 
-#[macro_use]
-extern crate bitflags;
+#[macro_use] extern crate prettytable;
+#[macro_use] extern crate bitflags;
+extern crate num_cpus;
 
 use std::mem;
 
@@ -38,13 +38,25 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    //let mut g = Game::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 1").unwrap();
-    let g = Game::starting_position();
+    //let mut g = Game::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap();
+    let mut g = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
 
     // g.board.print();
 
-    perft(&g,4);
+    perft(g,5);
+
+    // let mut move_gen = MoveGen::new();
+    // let move_buffer = move_gen.move_list(&g);
+
+    // for m in &move_buffer {
+    //     let mut game_copy = g;
+    //     game_copy.make_move(*m);
+    //     m.print();
+    //     game_copy.board.print();
+    // }
+
 
 
 
 }
+

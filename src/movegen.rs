@@ -5,6 +5,7 @@ use board::*;
 use tables::*;
 use game::*;
 
+#[derive(Clone, Copy)]
 pub struct MoveGen {
     diag_pin_map: [Bitboard; 64],
     nondiag_pin_map: [Bitboard; 64]
@@ -130,7 +131,6 @@ impl MoveGen {
 
             // double pushes
             for to in double_advanced_pawns & empty_squares & double_pawn_push_rank & quiet_mask {
-
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_double_push) as u32);
 
                 move_buffer.push(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));

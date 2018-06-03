@@ -188,8 +188,8 @@ impl Game {
                         assert!(self.ep_square.is_some());
 
                         let captured_bit = match moving_color {
-                            White => self.ep_square.unwrap().bitrep().shifted_up(),
-                            Black => self.ep_square.unwrap().bitrep().shifted_down()
+                            White => self.ep_square.unwrap().bitrep().shifted_down(),
+                            Black => self.ep_square.unwrap().bitrep().shifted_up()
                         };
 
                         *self.board.get_pieces_mut(opponent_color, Pawn) ^= captured_bit;
