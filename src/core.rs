@@ -30,7 +30,7 @@ impl Square {
         }
     }
 
-    pub fn from_algebraic(alg: &'static str) -> Option<Square> {
+    pub fn from_algebraic(alg: &str) -> Option<Square> {
         let mut it: Chars = alg.chars();
 
         let file_idx = match it.next() {

@@ -20,10 +20,13 @@ pub const FILE7: Bitboard = Bitboard::new(4629771061636907072);
 pub const FILE8: Bitboard = Bitboard::new(9259542123273814144);
 
 pub const WHITE_KINGSIDE_CASTLE_BITS: Bitboard = Bitboard::new(1 << 1 | 1 << 2);
+pub const BLACK_KINGSIDE_CASTLE_BITS: Bitboard = Bitboard::new(1 << 63 - 6 | 1 << 63 - 5);
+
+pub const BLACK_QUEENSIDE_CASTLE_BITS: Bitboard = Bitboard::new(1 << 63 - 1 | 1 << 63 - 2 | 1 << 63 - 3);
 pub const WHITE_QUEENSIDE_CASTLE_BITS: Bitboard = Bitboard::new(1 << 4 | 1 << 5 | 1 << 6);
 
-pub const BLACK_KINGSIDE_CASTLE_BITS: Bitboard = Bitboard::new(1 << 63 - 6 | 1 << 63 - 5);
-pub const BLACK_QUEENSIDE_CASTLE_BITS: Bitboard = Bitboard::new(1 << 63 - 1 | 1 << 63 - 2 | 1 << 63 - 3);
+pub const BLACK_QUEENSIDE_CASTLE_SAFETY_BITS: Bitboard = Bitboard::new(1 << 63 - 2 | 1 << 63 - 3);
+pub const WHITE_QUEENSIDE_CASTLE_SAFETY_BITS: Bitboard = Bitboard::new(1 << 4 | 1 << 5);
 
 pub const KNIGHT_TABLE: [Bitboard; 64] =
   [ Bitboard::new(132096)
@@ -100,7 +103,7 @@ pub const KING_TABLE: [Bitboard; 64] =
   , Bitboard::new(14376)
   , Bitboard::new(28752)
   , Bitboard::new(57504)
-  , Bitboard::new(115009)
+  , Bitboard::new(49216)
   , Bitboard::new(230019)
   , Bitboard::new(460039)
   , Bitboard::new(920078)
@@ -149,7 +152,7 @@ pub const KING_TABLE: [Bitboard; 64] =
   , Bitboard::new(8093091675687092224)
   , Bitboard::new(16186183351374184448)
   , Bitboard::new(13925622629038817280)
-  , Bitboard::new(9404501184368082944)
+  , Bitboard::new(144959613005987840)
   , Bitboard::new(362258295026614272)
   , Bitboard::new(724516590053228544)
   , Bitboard::new(1449033180106457088)
