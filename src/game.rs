@@ -5,6 +5,7 @@ use board::*;
 use tables::*;
 
 use std::collections::HashMap;
+use std::num;
 
 bitflags! {
     pub struct CastlingRights: u8 {
@@ -46,6 +47,84 @@ impl Game {
             fifty_move_count: 0,
             moves: 1
         }
+    }
+
+    pub fn to_fen(&self) -> String {
+        use PieceType::*;
+        use Color::*;
+
+        println!("what");
+
+        let mut board_str = String::new();
+        let mut empty_tally = 0;
+
+        for idx in (0..64).rev() {
+            let sq = Square::new(idx);
+            let wrapped_across_row = sq.unwrap() % 8 == 7;
+
+            let maybe_piece = self.board.piece_at(sq);
+
+            if (maybe_piece.is_some() || wrapped_across_row) && empty_tally > 0 {
+                assert!(empty_tally <= 8);
+                board_str.push_str(&empty_tally.to_string());
+                empty_tally = 0;
+            }
+
+            if wrapped_across_row && idx < 63 {
+                board_str.push('/');
+            }
+
+            match maybe_piece {
+                Some(piece) => {
+                    match (piece.color, piece.ptype) {
+                        (Black , Pawn  ) => board_str.push('p'),
+                        (Black , Knight) => board_str.push('n'),
+                        (Black , Bishop) => board_str.push('b'),
+                        (Black , Rook  ) => board_str.push('r'),
+                        (Black , Queen ) => board_str.push('q'),
+                        (Black , King  ) => board_str.push('k'),
+                        (White , Pawn  ) => board_str.push('P'),
+                        (White , Knight) => board_str.push('N'),
+                        (White , Bishop) => board_str.push('B'),
+                        (White , Rook  ) => board_str.push('R'),
+                        (White , Queen ) => board_str.push('Q'),
+                        (White , King  ) => board_str.push('K'),
+                    }
+                }
+                None => empty_tally += 1
+            }
+        }
+
+        let to_move_str = match self.to_move {
+            White => "w".to_string(),
+            Black => "b".to_string()
+        };
+
+        let mut castling_str = String::new();
+
+        if (self.castling_rights == CastlingRights::empty()) {
+            castling_str = "-".to_string();
+        } else {
+            if self.castling_rights.intersects(CastlingRights::WHITE_KINGSIDE) {
+                castling_str.push('K');
+            }
+            if self.castling_rights.intersects(CastlingRights::WHITE_QUEENSIDE) {
+                castling_str.push('Q');
+            }
+            if self.castling_rights.intersects(CastlingRights::BLACK_KINGSIDE) {
+                castling_str.push('k');
+            }
+            if self.castling_rights.intersects(CastlingRights::BLACK_QUEENSIDE) {
+                castling_str.push('q');
+            }
+        }
+
+        let ep_square_str = match self.ep_square {
+            Some(sq) => sq.to_algebraic().to_string(),
+            None => "-".to_string()
+        };
+
+        return [board_str, to_move_str, castling_str, ep_square_str, self.fifty_move_count.to_string(), self.moves.to_string()].join(" ");
     }
 
     pub fn from_fen(fen: &'static str) -> Option<Game> {

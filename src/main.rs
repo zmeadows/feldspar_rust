@@ -40,10 +40,11 @@ fn main() {
 
     //let mut g = Game::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap();
     let mut g = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+    println!("{}", g.to_fen());
 
     // g.board.print();
 
-    perft(g,5);
+    // perft_divide(g,4);
 
     // let mut move_gen = MoveGen::new();
     // let move_buffer = move_gen.move_list(&g);

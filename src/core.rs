@@ -13,14 +13,6 @@ impl Square {
         Square(idx)
     }
 
-    pub fn all() -> Vec<Square> {
-        let mut v = Vec::new();
-        for x in 0 .. 64 {
-            v.push(Square::new(x));
-        }
-        return v;
-    }
-
     pub fn idx(self) -> usize { return self.0 as usize; }
 
     pub fn unwrap(self) -> u32 { return self.0; }
