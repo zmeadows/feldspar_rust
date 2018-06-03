@@ -180,6 +180,10 @@ impl PerftContext {
                 self.result.castles[current_depth] += 1;
             }
 
+            if m.is_promotion() {
+                self.result.promotions[current_depth] += 1;
+            }
+
 
             self.go2(current_depth+1, max_depth, None);
             self.game = game_copy;
@@ -276,7 +280,7 @@ pub fn perft(game: Game, depth: usize) {
                                    Cell::new(&final_result.captures[i].to_string()),
                                    Cell::new(&final_result.ep_captures[i].to_string()),
                                    Cell::new(&final_result.castles[i].to_string()),
-                                   Cell::new("0"),
+                                   Cell::new(&final_result.promotions[i].to_string()),
                                    Cell::new(&final_result.checks[i].to_string()),
                                    Cell::new(&final_result.check_mates[i].to_string()) ]
                                   )
@@ -340,7 +344,7 @@ pub fn qperft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
 
 pub fn qperft_debug(game: Game) {
 
-    for depth in 3 .. 7 {
+    for depth in 3 .. 8 {
         println!("depth: {}", depth);
         let qperft_results = qperft_divide(game.clone(), depth);
         let feldspar_results = perft_divide(game.clone(), depth);
@@ -348,6 +352,7 @@ pub fn qperft_debug(game: Game) {
         if (qperft_results.len() != feldspar_results.len()) {
             game.board.print();
             println!("{}", game.to_fen());
+            println!("{} {}", qperft_results.len(), feldspar_results.len());
 
             for (m,s) in &qperft_results {
                 match feldspar_results.get(m) {
@@ -382,7 +387,7 @@ pub fn qperft_debug(game: Game) {
                                 println!("{}", game_copy.to_fen());
                                 game_copy.board.print();
                                 qperft_debug(game_copy);
-                                return;
+                                break;
                             },
 
                             None => { println!("unexpected weirdness"); }

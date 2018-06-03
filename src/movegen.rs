@@ -174,9 +174,26 @@ impl MoveGen {
 
                 match game.ep_square {
                     //TODO: en-passante discovered check test
-                    Some(sq) => {
-                        if (pawn_attack_pattern & sq.bitrep()).nonempty() {
-                            move_buffer.push(Move::new(from, sq, EP_CAPTURE_FLAG));
+                    Some(ep_capture_square) => {
+                        let captured_sq = match opponent_color {
+                                White => Square::new(ep_capture_square.unwrap() + 8),
+                                Black => Square::new(ep_capture_square.unwrap() - 8)
+                        };
+
+                        if (captured_sq.bitrep() & capture_mask).nonempty() 
+                            && (PAWN_ATTACKS[friendly_color as usize][from.idx()] & ep_capture_square.bitrep()).nonempty() 
+                        {
+                            let mut board_copy = game.board.clone();
+
+                            *board_copy.get_pieces_mut(opponent_color, Pawn) &= !captured_sq.bitrep();
+                            *board_copy.get_pieces_mut(friendly_color, Pawn) &= !from.bitrep();
+                            *board_copy.occupied_by_mut(opponent_color) &= !captured_sq.bitrep();
+                            *board_copy.occupied_by_mut(friendly_color) &= !from.bitrep();
+
+                            let attackers = board_copy.attackers(king_square, opponent_color);
+                            if attackers.empty() {
+                                move_buffer.push(Move::new(from, ep_capture_square, EP_CAPTURE_FLAG));
+                            }
                         }
                     },
                     None => {}
