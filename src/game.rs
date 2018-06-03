@@ -149,6 +149,7 @@ impl Game {
 
             let decrement_square = |sq: &mut Square, n: u32| {
                 if sq.unwrap() > 0 {
+                    println!("sq: {}", sq.idx());
                     *sq = Square::new(sq.unwrap() - n);
                 }
             };
