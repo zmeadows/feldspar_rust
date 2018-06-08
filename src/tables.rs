@@ -836,24 +836,25 @@ pub const PAWN_ATTACKS: [[Bitboard;64];2] =
   ]
 ];
 
-pub fn get_positive_ray(square: Square, dir: Direction, occupied: Bitboard) -> Bitboard
+pub fn get_positive_ray(square: Square, dir: Direction, mut occupied: Bitboard) -> Bitboard
 {
    let attacks = RAY_TABLE[dir as usize][square.idx()];
-   let blocker = attacks & occupied;
-   if blocker.nonempty() {
-      let blocker_square = blocker.bitscan_forward();
+   occupied &= attacks;
+   if occupied.nonempty() {
+      let blocker_square = occupied.bitscan_forward();
       return attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()];
    } else {
        return attacks;
    }
 }
 
-pub fn get_negative_ray(square: Square, dir: Direction, occupied: Bitboard) -> Bitboard
+pub fn get_negative_ray(square: Square, dir: Direction, mut occupied: Bitboard) -> Bitboard
 {
    let attacks = RAY_TABLE[dir as usize][square.idx()];
-   let blocker = attacks & occupied;
-   if blocker.nonempty() {
-      let blocker_square = blocker.bitscan_reverse();
+   occupied &= attacks;
+   // TODO: don't use nonemtpy and bitscan_reverse calls, bitscan_reverse is enough
+   if occupied.nonempty() {
+      let blocker_square = occupied.bitscan_reverse();
       return attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()];
    } else {
        return attacks;

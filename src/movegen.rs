@@ -5,6 +5,10 @@ use board::*;
 use tables::*;
 use game::*;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::cell::RefMut;
+
 #[derive(Clone, Copy)]
 pub struct MoveGen {
     diag_pin_map: [Bitboard; 64],
@@ -13,11 +17,17 @@ pub struct MoveGen {
 
 impl MoveGen {
     pub fn new() -> MoveGen {
-        return MoveGen { diag_pin_map: [Bitboard::new(0); 64], nondiag_pin_map: [Bitboard::new(0); 64] };
+        return MoveGen {
+            diag_pin_map: [Bitboard::new(0); 64],
+            nondiag_pin_map: [Bitboard::new(0); 64]
+        };
     }
 
-    pub fn move_list(&mut self, game: &Game) -> Vec<Move> {
-        let mut move_buffer = Vec::new();
+    pub fn fill_move_buffer(&mut self, game: &Game,
+                            move_buffer_ref: &Rc<RefCell<MoveList>>)
+    {
+        let mut move_buffer = move_buffer_ref.borrow_mut();
+        move_buffer.clear();
 
         use Color::*;
         use PieceType::*;
@@ -39,12 +49,12 @@ impl MoveGen {
 
         if check_multiplicity > 1 {
             for to in king_moves & empty_squares & !king_danger_squares {
-                move_buffer.push(Move::new(king_square, to, QUIET_FLAG));
+                move_buffer.add(Move::new(king_square, to, QUIET_FLAG));
             }
             for to in king_moves & opponent_pieces & !king_danger_squares {
-                move_buffer.push(Move::new(king_square, to, CAPTURE_FLAG));
+                move_buffer.add(Move::new(king_square, to, CAPTURE_FLAG));
             }
-            return move_buffer;
+            return;
         }
 
         let mut capture_mask = Bitboard::new(u64::max_value());
@@ -63,9 +73,6 @@ impl MoveGen {
 
         let mut pinned_diagonally = Bitboard::new(0);
         let mut pinned_nondiagonally = Bitboard::new(0);
-
-        // NOTE: stored *_pin_map arrays could potentially be a source of strange bugs.
-        // NOTE: easy to debug though, just clear them each call and see if results change.
 
         {
             let opRQ = game.board.get_pieces(opponent_color, Rook) | game.board.get_pieces(opponent_color, Queen);
@@ -129,12 +136,12 @@ impl MoveGen {
                 }
 
                 if to.rank() == promotion_rank {
-                    move_buffer.push(Move::new(from, to, BISHOP_PROMO_FLAG));
-                    move_buffer.push(Move::new(from, to, KNIGHT_PROMO_FLAG));
-                    move_buffer.push(Move::new(from, to, ROOK_PROMO_FLAG));
-                    move_buffer.push(Move::new(from, to, QUEEN_PROMO_FLAG));
+                    move_buffer.add(Move::new(from, to, BISHOP_PROMO_FLAG));
+                    move_buffer.add(Move::new(from, to, KNIGHT_PROMO_FLAG));
+                    move_buffer.add(Move::new(from, to, ROOK_PROMO_FLAG));
+                    move_buffer.add(Move::new(from, to, QUEEN_PROMO_FLAG));
                 } else {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
             }
 
@@ -147,7 +154,7 @@ impl MoveGen {
                         continue;
                 }
 
-                move_buffer.push(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
+                move_buffer.add(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
             }
 
             let pawns_that_can_capture = friendly_pawns & !pinned_nondiagonally;
@@ -163,12 +170,12 @@ impl MoveGen {
                 for to in pawn_attack_pattern & opponent_pieces
                 {
                     if to.rank() == promotion_rank {
-                        move_buffer.push(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
-                        move_buffer.push(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
-                        move_buffer.push(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
-                        move_buffer.push(Move::new(from, to, QUEEN_PROMO_CAPTURE_FLAG));
+                        move_buffer.add(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
+                        move_buffer.add(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
+                        move_buffer.add(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
+                        move_buffer.add(Move::new(from, to, QUEEN_PROMO_CAPTURE_FLAG));
                     } else {
-                        move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                        move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                     }
                 }
 
@@ -180,8 +187,8 @@ impl MoveGen {
                                 Black => Square::new(ep_capture_square.unwrap() - 8)
                         };
 
-                        if (captured_sq.bitrep() & capture_mask).nonempty() 
-                            && (PAWN_ATTACKS[friendly_color as usize][from.idx()] & ep_capture_square.bitrep()).nonempty() 
+                        if (captured_sq.bitrep() & capture_mask).nonempty()
+                            && (PAWN_ATTACKS[friendly_color as usize][from.idx()] & ep_capture_square.bitrep()).nonempty()
                         {
                             let mut board_copy = game.board.clone();
 
@@ -192,7 +199,7 @@ impl MoveGen {
 
                             let attackers = board_copy.attackers(king_square, opponent_color);
                             if attackers.empty() {
-                                move_buffer.push(Move::new(from, ep_capture_square, EP_CAPTURE_FLAG));
+                                move_buffer.add(Move::new(from, ep_capture_square, EP_CAPTURE_FLAG));
                             }
                         }
                     },
@@ -211,12 +218,12 @@ impl MoveGen {
 
                 /* quiets */
                 for to in knight_moves & empty_squares & quiet_mask {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
 
                 /* captures */
                 for to in knight_moves & opponent_pieces & capture_mask {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
         }
@@ -235,12 +242,12 @@ impl MoveGen {
 
                 // quiets
                 for to in bishop_moves & empty_squares & quiet_mask {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
 
                 // captures
                 for to in bishop_moves & opponent_pieces & capture_mask {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
 
@@ -251,12 +258,12 @@ impl MoveGen {
 
                 // quiets
                 for to in bishop_moves & empty_squares & quiet_mask {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
 
                 // captures
                 for to in bishop_moves & opponent_pieces & capture_mask {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
 
@@ -277,12 +284,12 @@ impl MoveGen {
 
                 /* quiets */
                 for to in rook_moves & empty_squares & quiet_mask {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
 
                 /* captures */
                 for to in rook_moves & opponent_pieces & capture_mask {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
 
@@ -293,12 +300,12 @@ impl MoveGen {
 
                 /* quiets */
                 for to in rook_moves & empty_squares & quiet_mask {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
 
                 /* captures */
                 for to in rook_moves & opponent_pieces & capture_mask {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
         }
@@ -315,12 +322,12 @@ impl MoveGen {
 
                 /* quiets */
                 for to in queen_moves & empty_squares & quiet_mask {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
 
                 /* captures */
                 for to in queen_moves & opponent_pieces & capture_mask {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
 
@@ -332,12 +339,12 @@ impl MoveGen {
 
                 /* quiets */
                 for to in queen_moves & empty_squares & quiet_mask {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
 
                 /* captures */
                 for to in queen_moves & opponent_pieces & capture_mask {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
 
@@ -347,12 +354,12 @@ impl MoveGen {
 
                 /* quiets */
                 for to in queen_moves & empty_squares & quiet_mask {
-                    move_buffer.push(Move::new(from, to, QUIET_FLAG));
+                    move_buffer.add(Move::new(from, to, QUIET_FLAG));
                 }
 
                 /* captures */
                 for to in queen_moves & opponent_pieces & capture_mask {
-                    move_buffer.push(Move::new(from, to, CAPTURE_FLAG));
+                    move_buffer.add(Move::new(from, to, CAPTURE_FLAG));
                 }
             }
         }
@@ -364,12 +371,12 @@ impl MoveGen {
         {
             /* quiets */
             for to in king_moves & empty_squares & !king_danger_squares {
-                move_buffer.push(Move::new(king_square, to, QUIET_FLAG));
+                move_buffer.add(Move::new(king_square, to, QUIET_FLAG));
             }
 
             /* captures */
             for to in king_moves & opponent_pieces & !king_danger_squares {
-                move_buffer.push(Move::new(king_square, to, CAPTURE_FLAG));
+                move_buffer.add(Move::new(king_square, to, CAPTURE_FLAG));
             }
 
             /* castling */
@@ -400,8 +407,8 @@ impl MoveGen {
 
                     if castle_path_is_safe {
                         match friendly_color {
-                            White => move_buffer.push(Move::new(king_square, Square::new(1), KING_CASTLE_FLAG)),
-                            Black => move_buffer.push(Move::new(king_square, Square::new(57), KING_CASTLE_FLAG))
+                            White => move_buffer.add(Move::new(king_square, Square::new(1), KING_CASTLE_FLAG)),
+                            Black => move_buffer.add(Move::new(king_square, Square::new(57), KING_CASTLE_FLAG))
                         }
                     }
                 }
@@ -429,15 +436,13 @@ impl MoveGen {
 
                     if castle_path_is_safe {
                         match friendly_color {
-                            White => move_buffer.push(Move::new(king_square, Square::new(5), QUEEN_CASTLE_FLAG)),
-                            Black => move_buffer.push(Move::new(king_square, Square::new(61), QUEEN_CASTLE_FLAG))
+                            White => move_buffer.add(Move::new(king_square, Square::new(5), QUEEN_CASTLE_FLAG)),
+                            Black => move_buffer.add(Move::new(king_square, Square::new(61), QUEEN_CASTLE_FLAG))
                         }
                     }
                 }
             }
         }
-
-        return move_buffer;
     }
 }
 
@@ -450,10 +455,11 @@ pub fn move_from_algebraic(game: Game, move_str: String) -> Option<Move> {
             match Square::from_algebraic(&to_str) {
                 Some(to_sq) => {
                     let mut move_gen = MoveGen::new();
-                    let move_buffer = move_gen.move_list(&game);
-                    for m in move_buffer {
+                    let move_buffer = alloc_move_buffer();
+                    move_gen.fill_move_buffer(&game, &move_buffer);
+                    for m in move_buffer.borrow().iter() {
                         if m.from() == from_sq && m.to() == to_sq {
-                            return Some(m);
+                            return Some(*m);
                         }
                     }
                 }

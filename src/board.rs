@@ -123,6 +123,8 @@ impl Board {
         return attackers;
     }
 
+    //OPTIMIZE: do flood fill instead of generating attacks for individual pieces
+    // since it doesn't matter which piece is attacking where.
     pub fn attacked(&self, attacking_color: Color, remove_king: bool) -> Bitboard {
         use PieceType::*;
 

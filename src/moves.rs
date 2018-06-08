@@ -1,5 +1,8 @@
 use core::*;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Move(u32);
 
@@ -46,3 +49,84 @@ impl Move {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct MoveList {
+    moves: [Move; 110],
+    count: usize
+}
+
+impl MoveList {
+    pub fn new() -> MoveList {
+        MoveList {
+            moves: [Move::new(Square::new(0),Square::new(0), QUIET_FLAG); 110],
+            count: 0
+        }
+    }
+
+    pub fn add(&mut self, m: Move) {
+        self.moves[self.count] = m;
+        self.count += 1;
+    }
+
+    pub fn clear(&mut self) {
+        self.count = 0;
+    }
+
+    pub fn len(&self) -> usize { self.count }
+}
+
+#[derive(Clone, Copy)]
+pub struct MoveListIterator<'a> {
+    move_list: &'a MoveList,
+    current: usize
+}
+
+impl<'a> Iterator for MoveListIterator<'a> {
+    type Item = &'a Move;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current < self.move_list.len() {
+            self.current += 1;
+            return Some(&self.move_list.moves[self.current-1]);
+        } else {
+            return None;
+        }
+    }
+}
+
+impl MoveList {
+    pub fn iter<'a>(&'a self) -> MoveListIterator {
+        MoveListIterator {
+            move_list: self,
+            current: 0,
+        }
+    }
+}
+
+pub type MoveBuffer = Rc<RefCell<MoveList>>;
+
+pub fn alloc_move_buffer() -> MoveBuffer {
+    Rc::new(RefCell::new(MoveList::new()))
+}
+
+#[derive(Clone)]
+pub struct MoveStack {
+    stack: Vec<MoveBuffer>
+}
+
+
+impl MoveStack {
+    pub fn new() -> MoveStack {
+        let mut new_stack = Vec::new();
+
+        for i in 0 .. 500 {
+            new_stack.push(alloc_move_buffer());
+        }
+
+        MoveStack { stack: new_stack }
+    }
+
+    pub fn at_depth(&self, depth: usize) -> &MoveBuffer {
+        &self.stack[depth - 1]
+    }
+}

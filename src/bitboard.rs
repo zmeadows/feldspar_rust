@@ -26,7 +26,6 @@ impl Bitboard {
     pub fn shifted_up(self) -> Bitboard { return Bitboard(self.0 << 8); }
 
     pub fn population(self) -> u32 { self.0.count_ones() }
-
     pub fn unwrap(self) -> u64 { return self.0; }
 }
 

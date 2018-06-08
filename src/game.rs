@@ -1,7 +1,8 @@
-use core::*;
 use bitboard::*;
-use moves::*;
 use board::*;
+use core::*;
+use moves::*;
+use moves::*;
 use tables::*;
 
 use std::collections::HashMap;
@@ -16,28 +17,25 @@ bitflags! {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+pub enum GameResult {
+    Win(Color),
+    Draw
+}
+
+#[derive(Clone, Copy)]
 pub struct Game {
     pub board: Board,
     pub to_move: Color,
     pub ep_square: Option<Square>,
     pub castling_rights: CastlingRights,
     pub fifty_move_count: u8,
-    pub moves: u16,
-    pub history: Vec<Move>
+    pub moves_played: u16,
+    pub king_attackers: Bitboard
 }
 
 impl Game {
     pub fn starting_position() -> Game {
-        Game {
-            board: Board::starting_position(),
-            to_move: Color::White,
-            ep_square: None,
-            castling_rights: CastlingRights::all(),
-            fifty_move_count: 0,
-            moves: 1,
-            history: Vec::new()
-        }
+        Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
     }
 
     pub fn empty_position() -> Game {
@@ -47,9 +45,27 @@ impl Game {
             ep_square: None,
             castling_rights: CastlingRights::empty(),
             fifty_move_count: 0,
-            moves: 1,
-            history: Vec::new()
+            moves_played: 0,
+            king_attackers: Bitboard::new(0)
         }
+    }
+
+    pub fn outcome(&self, move_count: usize) -> Option<GameResult> {
+        let check_multiplicity  = self.king_attackers.population();
+
+        if move_count == 0 && check_multiplicity > 0 {
+            return Some(GameResult::Win(!self.to_move));
+        }
+
+        if move_count == 0 && check_multiplicity == 0 {
+            return Some(GameResult::Draw);
+        }
+
+        if self.fifty_move_count >= 50 {
+            return Some(GameResult::Draw);
+        }
+
+        return None;
     }
 
     pub fn to_fen(&self) -> String {
@@ -129,7 +145,13 @@ impl Game {
             None => "-".to_string()
         };
 
-        return [board_str, to_move_str, castling_str, ep_square_str, self.fifty_move_count.to_string(), self.moves.to_string()].join(" ");
+        return [board_str,
+                to_move_str,
+                castling_str,
+                ep_square_str,
+                self.fifty_move_count.to_string(),
+                self.moves_played.to_string()
+        ].join(" ");
     }
 
     pub fn from_fen(fen: &'static str) -> Option<Game> {
@@ -223,8 +245,11 @@ impl Game {
 
         match words[5].parse::<u16>() {
             Err(_) => return None,
-            Ok(x) => game.moves = x
+            Ok(x) => game.moves_played = x
         }
+
+        let king_square     = game.board.get_king_square(game.to_move);
+        game.king_attackers = game.board.attackers(king_square, !game.to_move);
 
         return Some(game);
     }
@@ -242,19 +267,12 @@ impl Game {
         let opponent_color = !moving_color;
 
         let king_square = self.board.get_king_square(opponent_color);
-        // if (to_sq == king_square) {
-        //     println!("Invalid king capture move!");
-        //     self.board.print();
-        //     for m in &self.history {
-        //         m.print();
-        //     }
-        //     println!("{}", self.to_fen());
-        // }
 
         use Color::*;
         use PieceType::*;
 
         let moved_piece = self.board.piece_at(from_sq).unwrap().ptype;
+        let mut captured_piece = None;
 
         if (is_capture) {
             match to_sq.idx() {
@@ -264,17 +282,17 @@ impl Game {
                 63 => self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE),
                 _ => {}
             }
-        }
 
-        let captured_piece =
-            if flag == EP_CAPTURE_FLAG {
-                match opponent_color {
-                    White => self.board.piece_at(Square::new(self.ep_square.unwrap().unwrap() + 8)),
-                    Black => self.board.piece_at(Square::new(self.ep_square.unwrap().unwrap() - 8))
-                }
-            } else {
-                self.board.piece_at(to_sq)
-            };
+            captured_piece =
+                if flag == EP_CAPTURE_FLAG {
+                    match opponent_color {
+                        White => self.board.piece_at(Square::new(self.ep_square.unwrap().unwrap() + 8)),
+                        Black => self.board.piece_at(Square::new(self.ep_square.unwrap().unwrap() - 8))
+                    }
+                } else {
+                    self.board.piece_at(to_sq)
+                };
+        }
 
         assert!(is_capture == captured_piece.is_some());
 
@@ -291,9 +309,7 @@ impl Game {
                     }
                 }
 
-
                 // TODO: promotions
-
                 if is_capture {
                     if flag == EP_CAPTURE_FLAG {
                         assert!(self.ep_square.is_some());
@@ -381,7 +397,6 @@ impl Game {
                 }
             },
 
-            //TODO: check castle flag and move rook
             King => {
                 *self.board.get_pieces_mut(self.to_move, King) ^= from_to_bit;
                 *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
@@ -436,9 +451,6 @@ impl Game {
         }
 
         self.to_move = !self.to_move;
-
-        self.history.push(m);
-
     }
 }
 
