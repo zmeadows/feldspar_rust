@@ -12,6 +12,7 @@ use std::thread;
 use std::ops::Add;
 use std::os;
 use std::process::Command;
+use time::PreciseTime;
 
 use prettytable::Table;
 use prettytable::cell::Cell;
@@ -109,7 +110,6 @@ impl PerftContext {
         match self.game.outcome(move_stack.at_depth(current_depth).borrow().len()) {
             Some(GameResult::Win(_)) => {
                 self.result.check_mates[current_depth - 1] += 1;
-                return;
             },
 
             Some(GameResult::Draw) => return,
@@ -117,6 +117,9 @@ impl PerftContext {
             None => {}
         }
 
+        if (self.game.king_attackers.population() > 0) {
+            self.result.checks[current_depth - 1] += 1;
+        }
 
         if current_depth > max_depth {
             return;
@@ -145,8 +148,6 @@ impl PerftContext {
             }
 
             self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(current_depth + 1));
-
-            // TODO: compute checks/checkmates
 
             self.go2(current_depth+1, max_depth, move_stack);
 
@@ -208,6 +209,8 @@ pub fn perft(game: Game, depth: usize) {
 
     let mut threads = Vec::new();
 
+    let start_time = PreciseTime::now();
+
     // TODO: divide this up more efficiencly
     // don't let the last thread process only 1 game, for example
     for move_subset in move_vec.chunks(move_vec.len() / num_cpus - 1) {
@@ -232,6 +235,8 @@ pub fn perft(game: Game, depth: usize) {
             Err(_) => println!("Failed to join threads for PERFT test.")
         }
     }
+
+    let end_time = PreciseTime::now();
 
     let mut table = Table::new();
     table.add_row(row![
@@ -263,6 +268,12 @@ pub fn perft(game: Game, depth: usize) {
         }
     }
 
+    let mut total_nodes: usize = 0;
+
+    for i in 0 .. 20 {
+        total_nodes += final_result.node_count[i];
+    }
+
     println!(r#"
  ___ ___ ___ ___ _____
 | _ \ __| _ \ __|_   _|
@@ -272,6 +283,9 @@ pub fn perft(game: Game, depth: usize) {
 
     game.board.print();
     table.printstd();
+
+    println!("Total Nodes Processed: {}", total_nodes);
+    println!("MNodes/Sec: {}", 1e-6 * total_nodes as f64 / (start_time.to(end_time).num_milliseconds() as f64 / 1000.0));
 
 }
 

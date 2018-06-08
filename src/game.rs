@@ -451,6 +451,8 @@ impl Game {
         }
 
         self.to_move = !self.to_move;
+
+        self.king_attackers = self.board.attackers(king_square, !self.to_move);
     }
 }
 
