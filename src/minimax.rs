@@ -53,7 +53,7 @@ impl MiniMaxContext {
 
     fn mini(&mut self, depth: usize, move_stack: &MoveStack) -> Score {
         if (depth == self.max_depth) {
-            return -1.0 * simple_eval(&self.game);
+            return simple_eval(&self.game);
         }
 
         let mut min: Score = 9999999999.0;
@@ -74,24 +74,45 @@ impl MiniMaxContext {
 
         return min;
     }
-
-    // fn go(&mut self, states: Vec<(Move,Game)>) {
-    // }
-
 }
 
-// pub fn minimax(game: Game, depth: usize) -> Move {
-//     let num_cpus = 5;
-//     let chunks = game.next_states_chunked(num_cpus);
-// 
-//     for move_subset in chunks.iter() {
-//     }
-// 
-//     let mut context = MiniMaxContext::new(game, depth);
-// 
-//     match game.to_move {
-//         Color::White => return 
-//         Color::Black =>
-//     }
-// }
+pub fn minimax(game: &Game, depth: usize) -> Move {
+    let next_states = MoveGen::next_states(&game);
+
+    if next_states.len() == 0 {
+        panic!("invalid game passed to minimax!");
+    }
+
+    let mut best_move = next_states.first().unwrap().0;
+    let mut best_score = match game.to_move {
+        Color::White => -999999999999999.0,
+        Color::Black => 999999999999999.0
+    };
+
+    let move_stack = MoveStack::new();
+
+    for (move_candidate, game_candidate) in MoveGen::next_states(&game) {
+        let mut context = MiniMaxContext::new(game_candidate, depth - 1);
+        match game.to_move {
+            Color::White => {
+                let new_score = context.mini(1, &move_stack);
+                if (new_score > best_score) {
+                    best_move = move_candidate;
+                    best_score = new_score;
+                }
+            },
+            Color::Black => {
+                let new_score = context.maxi(1, &move_stack);
+                if (new_score < best_score) {
+                    best_move = move_candidate;
+                    best_score = new_score;
+                }
+            }
+        }
+    }
+
+    println!("best score: {}", best_score);
+
+    return best_move;
+}
 

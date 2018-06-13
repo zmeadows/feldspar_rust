@@ -9,14 +9,13 @@ use game::*;
 pub type Score = f32;
 
 pub fn simple_eval(game: &Game) -> Score {
-    let mut score: Score = 0.0;
 
     use PieceType::*;
     use Color::*;
 
     let sum_pieces = |ptype: PieceType| {
-        let diff = game.board.get_pieces(White, ptype).population()
-                 - game.board.get_pieces(Black, ptype).population();
+        let diff = game.board.get_pieces(White, ptype).population() as i32
+                 - game.board.get_pieces(Black, ptype).population() as i32;
 
         let value = match ptype {
             Pawn => 100.0,
@@ -30,6 +29,7 @@ pub fn simple_eval(game: &Game) -> Score {
         return value * (diff as Score);
     };
 
+    let mut score: Score = 0.0;
     for ptype in PieceType::all() {
         score += sum_pieces(*ptype);
     }

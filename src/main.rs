@@ -44,15 +44,18 @@ fn main() {
     // let mut g = Game::from_fen("rnbqk1nr/pppp1ppp/8/4p3/1b1P4/8/PPPQPPPP/RNB1KBNR w KQkq - 0 1").unwrap();
     // println!("{}", g.to_fen());
 
-    let mut g = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+    let mut g = Game::from_fen("rnb1kbnr/pp2pppp/1q1p4/2p1N3/3PP3/8/PPP2PPP/RNBQKB1R b KQkq - 2 4").unwrap();
+    g.board.print();
 
     // perft(g.clone(),6);
 
-    let mut mcts = MCTS::new();
+    //let mut mcts = MCTS::new();
 
-    for i in 0 .. 10000 {
-        mcts.play_random_game(g);
-    }
+    // for i in 0 .. 10000 {
+    //     mcts.play_random_game(g);
+    // }
+
+    minimax(&g,5).print();
 
     if false {
         g.board.print();
