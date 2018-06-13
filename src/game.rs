@@ -17,6 +17,7 @@ bitflags! {
     }
 }
 
+#[derive(Debug,PartialEq,Clone, Copy)]
 pub enum GameResult {
     Win(Color),
     Draw
@@ -31,6 +32,7 @@ pub struct Game {
     pub fifty_move_count: u8,
     pub moves_played: u16,
     pub king_attackers: Bitboard
+    // pub static_evaluation: i32
 }
 
 impl Game {
@@ -62,6 +64,10 @@ impl Game {
         }
 
         if self.fifty_move_count >= 50 {
+            return Some(GameResult::Draw);
+        }
+
+        if (self.board.occupied().population() == 2) {
             return Some(GameResult::Draw);
         }
 
@@ -447,12 +453,16 @@ impl Game {
         if is_capture || moved_piece == Pawn {
             self.fifty_move_count = 0;
         } else {
-            // self.fifty_move_count += 1;
+            self.fifty_move_count += 1;
         }
 
         self.to_move = !self.to_move;
 
         self.king_attackers = self.board.attackers(king_square, !self.to_move);
+
+        if (self.to_move == White) {
+            self.moves_played += 1;
+        }
     }
 }
 
@@ -482,3 +492,5 @@ mod test {
         }
     }
 }
+
+

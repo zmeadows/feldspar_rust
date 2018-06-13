@@ -4,6 +4,7 @@
 #[macro_use] extern crate bitflags;
 extern crate num_cpus;
 extern crate time;
+extern crate rand;
 
 mod core; use core::*;
 mod board; use board::*;
@@ -14,6 +15,9 @@ mod game; use game::*;
 mod bitboard; use bitboard::*;
 mod movegen; use movegen::*;
 mod perft; use perft::*;
+mod play; use play::*;
+mod eval; use eval::*;
+mod minimax; use minimax::*;
 
 fn main() {
     let b = Board::starting_position();
@@ -42,7 +46,13 @@ fn main() {
 
     let mut g = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
 
-    perft(g.clone(),6);
+    // perft(g.clone(),6);
+
+    let mut mcts = MCTS::new();
+
+    for i in 0 .. 10000 {
+        mcts.play_random_game(g);
+    }
 
     if false {
         g.board.print();
@@ -58,5 +68,6 @@ fn main() {
         }
         println!("moves: {}", move_buffer.borrow().len());
     }
+
 }
 

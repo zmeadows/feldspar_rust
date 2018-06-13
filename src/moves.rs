@@ -73,6 +73,8 @@ impl MoveList {
     }
 
     pub fn len(&self) -> usize { self.count }
+
+    pub fn at(&self, idx: usize) -> Move { return self.moves[idx]; }
 }
 
 #[derive(Clone, Copy)]

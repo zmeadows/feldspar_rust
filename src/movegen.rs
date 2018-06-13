@@ -23,6 +23,39 @@ impl MoveGen {
         };
     }
 
+    pub fn next_states(game: &Game) -> Vec<(Move, Game)> {
+        let mut states = Vec::new();
+
+        let mut move_gen = MoveGen::new();
+        let move_buffer = alloc_move_buffer();
+        move_gen.fill_move_buffer(&game, &move_buffer);
+
+        for m in move_buffer.borrow().iter() {
+            let mut game_copy = game.clone();
+            game_copy.make_move(*m);
+            states.push( (*m, game_copy.clone()) );
+        }
+
+        return states;
+    }
+
+    pub fn next_states_chunked(game: &Game, num_cpu_cores: usize) -> Vec<Vec<(Move, Game)>> {
+        let states = MoveGen::next_states(game);
+        let mut chunks = Vec::new();
+
+        for i in 0 .. num_cpu_cores {
+            chunks.push(Vec::new());
+        }
+
+        let mut i = 0;
+        for x in states.iter() {
+            chunks[i % num_cpu_cores].push(x.clone());
+            i += 1;
+        }
+
+        return chunks;
+    }
+
     pub fn fill_move_buffer(&mut self, game: &Game,
                             move_buffer_ref: &Rc<RefCell<MoveList>>)
     {
