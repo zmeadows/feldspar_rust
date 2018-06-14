@@ -18,12 +18,12 @@ pub fn simple_eval(game: &Game) -> Score {
                  - game.board.get_pieces(Black, ptype).population() as i32;
 
         let value = match ptype {
-            Pawn => 100.0,
+            Pawn   => 100.0,
             Knight => 320.0,
             Bishop => 330.0,
-            Rook => 500.0,
-            Queen => 900.0,
-            King => 20000.0
+            Rook   => 500.0,
+            Queen  => 900.0,
+            King   => 20000.0
         };
 
         return value * (diff as Score);

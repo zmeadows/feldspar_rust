@@ -5,43 +5,74 @@ use game::*;
 use movegen::*;
 use moves::*;
 use tables::*;
+use alphabeta::*;
 
-use rand::{thread_rng, ThreadRng, Rng};
 
-pub struct MCTS {
-    move_gen: MoveGen,
-    rng: ThreadRng,
-    move_buffer: MoveBuffer
-}
+pub fn play_against_ai() {
+    let mut game = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
 
-impl MCTS {
-    pub fn new() -> MCTS {
-        MCTS {
-            move_gen: MoveGen::new(),
-            rng: thread_rng(),
-            move_buffer: alloc_move_buffer()
+    loop {
+        game.board.print();
+        use std::io::{stdin,stdout,Write};
+        let mut s=String::new();
+        print!("Enter your move: ");
+        let _=stdout().flush();
+        stdin().read_line(&mut s).expect("Did not enter a correct string");
+        if let Some('\n')=s.chars().next_back() {
+            s.pop();
+        }
+        if let Some('\r')=s.chars().next_back() {
+            s.pop();
+        }
+
+        match move_from_algebraic(game, s) {
+            Some(m) => {
+                game.make_move(m);
+                let ai_move = alphabeta(&game,7);
+                game.make_move(ai_move);
+            },
+            None => println!("Invalid move!")
         }
     }
 
-    pub fn play_random_game(&mut self, mut game: Game) -> GameResult {
-        while true {
-            self.move_gen.fill_move_buffer(&game, &self.move_buffer);
-            match game.outcome(self.move_buffer.borrow().len()) {
-                Some(result) => {
-                    println!("{}", game.moves_played);
-                    return result;
-                }
-                None => {}
-            }
-
-            let num_moves = self.move_buffer.borrow().len();
-
-            let n = if (num_moves == 1) { 0 } else { self.rng.gen_range(0, num_moves - 1) };
-
-            game.make_move(self.move_buffer.borrow().at(n));
-        }
-
-        return GameResult::Draw;
-    }
 }
+
+// use rand::{thread_rng, ThreadRng, Rng};
+
+// pub struct MCTS {
+//     move_gen: MoveGen,
+//     rng: ThreadRng,
+//     move_buffer: MoveBuffer
+// }
+// 
+// impl MCTS {
+//     pub fn new() -> MCTS {
+//         MCTS {
+//             move_gen: MoveGen::new(),
+//             rng: thread_rng(),
+//             move_buffer: alloc_move_buffer()
+//         }
+//     }
+// 
+//     pub fn play_random_game(&mut self, mut game: Game) -> GameResult {
+//         while true {
+//             self.move_gen.fill_move_buffer(&game, &self.move_buffer);
+//             match game.outcome(self.move_buffer.borrow().len()) {
+//                 Some(result) => {
+//                     println!("{}", game.moves_played);
+//                     return result;
+//                 }
+//                 None => {}
+//             }
+// 
+//             let num_moves = self.move_buffer.borrow().len();
+// 
+//             let n = if (num_moves == 1) { 0 } else { self.rng.gen_range(0, num_moves - 1) };
+// 
+//             game.make_move(self.move_buffer.borrow().at(n));
+//         }
+// 
+//         return GameResult::Draw;
+//     }
+// }
 

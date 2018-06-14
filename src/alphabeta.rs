@@ -12,28 +12,26 @@ use eval::*;
 use std::thread;
 use rayon::prelude::*;
 
-struct MiniMaxContext {
+struct AlphaBetaContext {
     max_depth: usize,
     game: Game,
     move_gen: MoveGen
 }
 
-impl MiniMaxContext {
+impl AlphaBetaContext {
 
-    fn new(new_game: &Game, depth: usize) -> MiniMaxContext {
-        MiniMaxContext {
+    fn new(new_game: &Game, depth: usize) -> AlphaBetaContext {
+        AlphaBetaContext {
             max_depth: depth,
             game: new_game.clone(),
             move_gen: MoveGen::new()
         }
     }
 
-    fn maxi(&mut self, depth: usize, move_stack: &MoveStack) -> Score {
+    fn maxi(&mut self, mut alpha: Score, beta: Score, depth: usize, move_stack: &MoveStack) -> Score {
         if (depth == self.max_depth) {
             return simple_eval(&self.game);
         }
-
-        let mut max: Score = -9999999999.0;
 
         self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(depth));
 
@@ -41,23 +39,26 @@ impl MiniMaxContext {
             let game_copy = self.game;
 
             self.game.make_move(*m);
-            let score = self.mini(depth + 1, move_stack);
+            let score = self.mini(alpha, beta, depth + 1, move_stack);
             self.game = game_copy;
 
-            if score > max {
-                max = score;
+            if score >= beta {
+                return beta;   // fail hard beta-cutoff
             }
+
+            if score > alpha {
+                alpha = score; // alpha acts like max in MiniMax
+            }
+
         }
 
-        return max;
+        return alpha;
     }
 
-    fn mini(&mut self, depth: usize, move_stack: &MoveStack) -> Score {
+    fn mini(&mut self, alpha: Score, mut beta: Score, depth: usize, move_stack: &MoveStack) -> Score {
         if (depth == self.max_depth) {
             return simple_eval(&self.game);
         }
-
-        let mut min: Score = 9999999999.0;
 
         self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(depth));
 
@@ -65,33 +66,37 @@ impl MiniMaxContext {
             let game_copy = self.game;
 
             self.game.make_move(*m);
-            let score = self.maxi(depth + 1, move_stack);
+            let score = self.maxi(alpha, beta, depth + 1, move_stack);
             self.game = game_copy;
 
-            if score < min {
-                min = score;
+            if score <= alpha {
+                return alpha; // fail hard alpha-cutoff
             }
+            if score < beta {
+                beta = score; // beta acts like min in MiniMax
+            }
+
         }
 
-        return min;
+        return beta;
     }
 }
 
-pub fn minimax(game: &Game, depth: usize) -> Move {
+pub fn alphabeta(game: &Game, depth: usize) -> Move {
     let next_states = MoveGen::next_states(&game);
 
     if next_states.len() == 0 {
-        panic!("finished game passed to minimax!");
+        panic!("finished game passed to alphabeta!");
     }
 
     let mut move_scores: Vec<(Move, Score)> = MoveGen::next_states(&game).par_iter().map(
         |(move_candidate, game_candidate)| -> (Move, Score) {
-            let mut context = MiniMaxContext::new(game_candidate, depth - 1);
+            let mut context = AlphaBetaContext::new(game_candidate, depth - 1);
             let move_stack = MoveStack::new();
 
             let score = match game.to_move {
-                Color::White => context.mini(1, &move_stack),
-                Color::Black => context.maxi(1, &move_stack)
+                Color::White => context.mini(-99999999.0, 99999999.0, 1, &move_stack),
+                Color::Black => context.maxi(-99999999.0, 99999999.0, 1, &move_stack)
             };
 
             return (*move_candidate, score);
