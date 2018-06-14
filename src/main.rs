@@ -1,11 +1,12 @@
 #![feature(const_fn)]
 
-#[macro_use] extern crate prettytable;
 #[macro_use] extern crate bitflags;
+#[macro_use] extern crate prettytable;
+extern crate chashmap;
 extern crate num_cpus;
-extern crate time;
 extern crate rand;
 extern crate rayon;
+extern crate time;
 
 mod core; use core::*;
 mod board; use board::*;
@@ -20,6 +21,7 @@ mod play; use play::*;
 mod eval; use eval::*;
 mod minimax; use minimax::*;
 mod alphabeta; use alphabeta::*;
+mod zobrist; use zobrist::*;
 
 fn main() {
     use Color::*;

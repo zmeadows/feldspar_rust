@@ -9,7 +9,7 @@ use alphabeta::*;
 
 
 pub fn play_against_ai() {
-    let mut game = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+    let mut game = Game::from_fen("r2qnrk1/3nbppp/3pb3/p3p1P1/1p2PP2/1N2B3/PPPQN2P/2KR1B1R w - - 0 15").unwrap();
 
     loop {
         game.board.print();
@@ -28,7 +28,7 @@ pub fn play_against_ai() {
         match move_from_algebraic(game, s) {
             Some(m) => {
                 game.make_move(m);
-                let ai_move = alphabeta(&game,7);
+                let ai_move = alphabeta(&game,8);
                 game.make_move(ai_move);
             },
             None => println!("Invalid move!")
