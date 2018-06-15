@@ -47,6 +47,10 @@ impl Move {
     pub fn is_promotion(&self) -> bool {
         return self.flag() & 0b1000 != 0;
     }
+
+    pub fn unwrap(&self) -> u32 {
+        return self.0;
+    }
 }
 
 #[derive(Clone, Copy)]

@@ -2,7 +2,6 @@
 
 #[macro_use] extern crate bitflags;
 #[macro_use] extern crate prettytable;
-extern crate chashmap;
 extern crate num_cpus;
 extern crate rand;
 extern crate rayon;

@@ -30,10 +30,10 @@ impl MiniMaxContext {
 
     fn maxi(&mut self, depth: usize, move_stack: &MoveStack) -> Score {
         if (depth == self.max_depth) {
-            return simple_eval(&self.game);
+            return self.game.score;
         }
 
-        let mut max: Score = -9999999999.0;
+        let mut max: Score = Score::MIN();
 
         self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(depth));
 
@@ -54,10 +54,10 @@ impl MiniMaxContext {
 
     fn mini(&mut self, depth: usize, move_stack: &MoveStack) -> Score {
         if (depth == self.max_depth) {
-            return simple_eval(&self.game);
+            return self.game.score;
         }
 
-        let mut min: Score = 9999999999.0;
+        let mut min: Score = Score::MAX();
 
         self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(depth));
 

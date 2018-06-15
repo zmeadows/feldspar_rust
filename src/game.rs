@@ -4,6 +4,7 @@ use core::*;
 use moves::*;
 use moves::*;
 use tables::*;
+use eval::*;
 
 use std::collections::HashMap;
 use std::num;
@@ -31,8 +32,8 @@ pub struct Game {
     pub castling_rights: CastlingRights,
     pub fifty_move_count: u8,
     pub moves_played: u16,
-    pub king_attackers: Bitboard
-    // pub static_evaluation: i32
+    pub king_attackers: Bitboard,
+    pub score: Score
 }
 
 impl Game {
@@ -48,7 +49,8 @@ impl Game {
             castling_rights: CastlingRights::empty(),
             fifty_move_count: 0,
             moves_played: 0,
-            king_attackers: Bitboard::new(0)
+            king_attackers: Bitboard::new(0),
+            score: Score::new(0)
         }
     }
 
@@ -257,6 +259,8 @@ impl Game {
         let king_square     = game.board.get_king_square(game.to_move);
         game.king_attackers = game.board.attackers(king_square, !game.to_move);
 
+        game.score = recompute_score(&game.board);
+
         return Some(game);
     }
 
@@ -277,7 +281,7 @@ impl Game {
         use Color::*;
         use PieceType::*;
 
-        let moved_piece = self.board.piece_at(from_sq).unwrap().ptype;
+        let moved_piece = self.board.piece_at(from_sq).unwrap();
         let mut captured_piece = None;
 
         if (is_capture) {
@@ -289,21 +293,30 @@ impl Game {
                 _ => {}
             }
 
-            captured_piece =
+            let captured_square =
                 if flag == EP_CAPTURE_FLAG {
                     match opponent_color {
-                        White => self.board.piece_at(Square::new(self.ep_square.unwrap().unwrap() + 8)),
-                        Black => self.board.piece_at(Square::new(self.ep_square.unwrap().unwrap() - 8))
+                        White => Square::new(self.ep_square.unwrap().unwrap() + 8),
+                        Black => Square::new(self.ep_square.unwrap().unwrap() - 8)
                     }
                 } else {
-                    self.board.piece_at(to_sq)
+                    to_sq
                 };
+
+            captured_piece = self.board.piece_at(captured_square);
+
+            self.score.remove_piece(moved_piece, from_sq);
+            self.score.add_piece(moved_piece, to_sq);
+            self.score.remove_piece(captured_piece.unwrap(), captured_square);
+        } else {
+            self.score.remove_piece(moved_piece, from_sq);
+            self.score.add_piece(moved_piece, to_sq);
         }
 
         assert!(is_capture == captured_piece.is_some());
 
         //TODO: add moving/captured piece type to Move structure
-        match moved_piece {
+        match moved_piece.ptype {
             Pawn => {
                 *self.board.get_pieces_mut(self.to_move, Pawn) ^= from_to_bit;
                 *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
@@ -315,7 +328,6 @@ impl Game {
                     }
                 }
 
-                // TODO: promotions
                 if is_capture {
                     if flag == EP_CAPTURE_FLAG {
                         assert!(self.ep_square.is_some());
@@ -338,12 +350,16 @@ impl Game {
 
                     if flag == KNIGHT_PROMO_FLAG || flag == KNIGHT_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Knight) |= to_bit;
+                        self.score.add_piece(Piece{ color: moving_color, ptype: Knight}, to_sq);
                     } else if flag == BISHOP_PROMO_FLAG || flag == BISHOP_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Bishop) |= to_bit;
+                        self.score.add_piece(Piece{ color: moving_color, ptype: Bishop}, to_sq);
                     } else if flag == ROOK_PROMO_FLAG || flag == ROOK_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Rook) |= to_bit;
+                        self.score.add_piece(Piece{ color: moving_color, ptype: Rook}, to_sq);
                     } else if flag == QUEEN_PROMO_FLAG || flag == QUEEN_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Queen) |= to_bit;
+                        self.score.add_piece(Piece{ color: moving_color, ptype: Queen}, to_sq);
                     }
 
                 }
@@ -450,7 +466,7 @@ impl Game {
             self.ep_square = None;
         }
 
-        if is_capture || moved_piece == Pawn {
+        if is_capture || moved_piece.ptype == Pawn {
             self.fifty_move_count = 0;
         } else {
             self.fifty_move_count += 1;

@@ -138,3 +138,20 @@ pub struct Piece {
     pub color: Color,
 }
 
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+pub struct Score { pub val: i32 }
+
+impl Score {
+    pub fn new(s: i32) -> Score {
+        Score { val: s }
+    }
+
+    pub fn MAX() -> Score {
+        Score::new(<i32>::max_value())
+    }
+
+    pub fn MIN() -> Score {
+        Score::new(<i32>::min_value())
+    }
+}
+

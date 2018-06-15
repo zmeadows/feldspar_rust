@@ -30,7 +30,7 @@ impl AlphaBetaContext {
 
     fn maxi(&mut self, mut alpha: Score, beta: Score, depth: usize, move_stack: &MoveStack) -> Score {
         if (depth == self.max_depth) {
-            return simple_eval(&self.game);
+            return self.game.score;
         }
 
         self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(depth));
@@ -57,7 +57,7 @@ impl AlphaBetaContext {
 
     fn mini(&mut self, alpha: Score, mut beta: Score, depth: usize, move_stack: &MoveStack) -> Score {
         if (depth == self.max_depth) {
-            return simple_eval(&self.game);
+            return self.game.score;
         }
 
         self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(depth));
@@ -89,24 +89,25 @@ pub fn alphabeta(game: &Game, depth: usize) -> Move {
         panic!("finished game passed to alphabeta!");
     }
 
-    let mut move_scores: Vec<(Move, Score)> = MoveGen::next_states(&game).par_iter().map(
+    let mut move_scores: Vec<(Move, Score)> = MoveGen::next_states(&game).iter().map(
         |(move_candidate, game_candidate)| -> (Move, Score) {
             let mut context = AlphaBetaContext::new(game_candidate, depth - 1);
             let move_stack = MoveStack::new();
 
             let score = match game.to_move {
-                Color::White => context.mini(-99999999.0, 99999999.0, 1, &move_stack),
-                Color::Black => context.maxi(-99999999.0, 99999999.0, 1, &move_stack)
+                Color::White => context.mini(Score::MIN(), Score::MAX(), 1, &move_stack),
+                Color::Black => context.maxi(Score::MIN(), Score::MAX(), 1, &move_stack)
             };
 
             return (*move_candidate, score);
         }).collect();
 
     match game.to_move {
-        Color::White => move_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap()),
-        Color::Black => move_scores.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+        Color::White => move_scores.sort_by(|a, b| b.1.val.partial_cmp(&a.1.val).unwrap()),
+        Color::Black => move_scores.sort_by(|a, b| a.1.val.partial_cmp(&b.1.val).unwrap())
     }
 
+    println!("ab score: {:?}", move_scores.first().unwrap().1);
     return move_scores.first().unwrap().0;
 }
 
