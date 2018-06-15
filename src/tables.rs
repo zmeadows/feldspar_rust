@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use core::*;
 use bitboard::*;
 
@@ -10,14 +12,14 @@ pub const RANK6: Bitboard = Bitboard::new(280375465082880);
 pub const RANK7: Bitboard = Bitboard::new(71776119061217280);
 pub const RANK8: Bitboard = Bitboard::new(18374686479671623680);
 
-pub const FILE1: Bitboard = Bitboard::new(72340172838076673);
-pub const FILE2: Bitboard = Bitboard::new(144680345676153346);
-pub const FILE3: Bitboard = Bitboard::new(289360691352306692);
-pub const FILE4: Bitboard = Bitboard::new(578721382704613384);
-pub const FILE5: Bitboard = Bitboard::new(1157442765409226768);
-pub const FILE6: Bitboard = Bitboard::new(2314885530818453536);
-pub const FILE7: Bitboard = Bitboard::new(4629771061636907072);
-pub const FILE8: Bitboard = Bitboard::new(9259542123273814144);
+// pub const FILE1: Bitboard = Bitboard::new(72340172838076673);
+// pub const FILE2: Bitboard = Bitboard::new(144680345676153346);
+// pub const FILE3: Bitboard = Bitboard::new(289360691352306692);
+// pub const FILE4: Bitboard = Bitboard::new(578721382704613384);
+// pub const FILE5: Bitboard = Bitboard::new(1157442765409226768);
+// pub const FILE6: Bitboard = Bitboard::new(2314885530818453536);
+// pub const FILE7: Bitboard = Bitboard::new(4629771061636907072);
+// pub const FILE8: Bitboard = Bitboard::new(9259542123273814144);
 
 pub const WHITE_KINGSIDE_CASTLE_BITS: Bitboard = Bitboard::new(1 << 1 | 1 << 2);
 pub const BLACK_KINGSIDE_CASTLE_BITS: Bitboard = Bitboard::new(1 << 63 - 6 | 1 << 63 - 5);
@@ -903,74 +905,74 @@ pub fn get_queen_rays(square: Square, occupied: Bitboard) -> Bitboard
          | get_rook_rays(square, occupied);
 }
 
-pub fn ray_between_squares(sqA: Square, sqB: Square) -> Bitboard
+pub fn ray_between_squares(sq_a: Square, sq_b: Square) -> Bitboard
 {
     //TODO: turn this into a lookup table
-    let sqBbit = sqB.bitrep();
+    let sqb_bit = sq_b.bitrep();
 
-    let mut ray = get_positive_ray(sqA, Direction::N, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    let mut ray = get_positive_ray(sq_a, Direction::N, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_positive_ray(sqA, Direction::E, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_positive_ray(sq_a, Direction::E, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_negative_ray(sqA, Direction::S, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_negative_ray(sq_a, Direction::S, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_negative_ray(sqA, Direction::W, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_negative_ray(sq_a, Direction::W, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_positive_ray(sqA, Direction::NE, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_positive_ray(sq_a, Direction::NE, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_positive_ray(sqA, Direction::NW, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_positive_ray(sq_a, Direction::NW, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_negative_ray(sqA, Direction::SW, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_negative_ray(sq_a, Direction::SW, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_negative_ray(sqA, Direction::SE, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_negative_ray(sq_a, Direction::SE, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
     return Bitboard::new(0);
 }
 
-pub fn diagonal_ray_between_squares(sqA: Square, sqB: Square) -> Bitboard
+pub fn diagonal_ray_between_squares(sq_a: Square, sq_b: Square) -> Bitboard
 {
     //TODO: turn this into a lookup table
-    let sqBbit = sqB.bitrep();
+    let sqb_bit = sq_b.bitrep();
 
-    let mut ray = get_positive_ray(sqA, Direction::NE, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    let mut ray = get_positive_ray(sq_a, Direction::NE, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_positive_ray(sqA, Direction::NW, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_positive_ray(sq_a, Direction::NW, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_negative_ray(sqA, Direction::SW, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_negative_ray(sq_a, Direction::SW, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_negative_ray(sqA, Direction::SE, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_negative_ray(sq_a, Direction::SE, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
     return Bitboard::new(0);
 }
 
-pub fn nondiagonal_ray_between_squares(sqA: Square, sqB: Square) -> Bitboard
+pub fn nondiagonal_ray_between_squares(sq_a: Square, sq_b: Square) -> Bitboard
 {
     //TODO: turn this into a lookup table
-    let sqBbit = sqB.bitrep();
+    let sqb_bit = sq_b.bitrep();
 
-    let mut ray = get_positive_ray(sqA, Direction::N, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    let mut ray = get_positive_ray(sq_a, Direction::N, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_positive_ray(sqA, Direction::E, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_positive_ray(sq_a, Direction::E, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_negative_ray(sqA, Direction::S, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_negative_ray(sq_a, Direction::S, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
-    ray = get_negative_ray(sqA, Direction::W, sqBbit);
-    if (ray & sqBbit).nonempty() { return ray; }
+    ray = get_negative_ray(sq_a, Direction::W, sqb_bit);
+    if (ray & sqb_bit).nonempty() { return ray; }
 
     return Bitboard::new(0);
 }

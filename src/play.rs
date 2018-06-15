@@ -1,12 +1,6 @@
-use bitboard::*;
-use board::*;
-use core::*;
 use game::*;
 use movegen::*;
-use moves::*;
-use tables::*;
 use alphabeta::*;
-
 
 pub fn play_against_ai() {
     let mut game = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();

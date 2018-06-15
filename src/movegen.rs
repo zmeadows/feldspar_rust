@@ -39,11 +39,12 @@ impl MoveGen {
         return states;
     }
 
+    #[allow(dead_code)]
     pub fn next_states_chunked(game: &Game, num_cpu_cores: usize) -> Vec<Vec<(Move, Game)>> {
         let states = MoveGen::next_states(game);
         let mut chunks = Vec::new();
 
-        for i in 0 .. num_cpu_cores {
+        for _ in 0 .. num_cpu_cores {
             chunks.push(Vec::new());
         }
 
@@ -108,8 +109,8 @@ impl MoveGen {
         let mut pinned_nondiagonally = Bitboard::new(0);
 
         {
-            let opRQ = game.board.get_pieces(opponent_color, Rook) | game.board.get_pieces(opponent_color, Queen);
-            let mut pinner = xray_rook_attacks(occupied_squares, friendly_pieces, king_square) & opRQ;
+            let op_rq = game.board.get_pieces(opponent_color, Rook) | game.board.get_pieces(opponent_color, Queen);
+            let mut pinner = xray_rook_attacks(occupied_squares, friendly_pieces, king_square) & op_rq;
             for pinner_square in pinner {
                 let connecting_bits = ray_between_squares(king_square, pinner_square);
                 let pinned_bit = connecting_bits & friendly_pieces;
@@ -118,8 +119,8 @@ impl MoveGen {
                 pinned_nondiagonally |= pinned_bit;
             }
 
-            let opBQ = game.board.get_pieces(opponent_color, Bishop) | game.board.get_pieces(opponent_color, Queen);
-            pinner = xray_bishop_attacks(occupied_squares, friendly_pieces, king_square) & opBQ;
+            let op_bq = game.board.get_pieces(opponent_color, Bishop) | game.board.get_pieces(opponent_color, Queen);
+            pinner = xray_bishop_attacks(occupied_squares, friendly_pieces, king_square) & op_bq;
             for pinner_square in pinner {
                 let connecting_bits = ray_between_squares(king_square, pinner_square);
                 let pinned_bit = connecting_bits & friendly_pieces;
@@ -226,9 +227,9 @@ impl MoveGen {
                             let mut board_copy = game.board.clone();
 
                             *board_copy.get_pieces_mut(opponent_color, Pawn) &= !captured_sq.bitrep();
-                            *board_copy.get_pieces_mut(friendly_color, Pawn) ^= (from.bitrep() | ep_capture_square.bitrep());
+                            *board_copy.get_pieces_mut(friendly_color, Pawn) ^= from.bitrep() | ep_capture_square.bitrep();
                             *board_copy.occupied_by_mut(opponent_color) &= !captured_sq.bitrep();
-                            *board_copy.occupied_by_mut(friendly_color) ^= (from.bitrep() | ep_capture_square.bitrep());
+                            *board_copy.occupied_by_mut(friendly_color) ^= from.bitrep() | ep_capture_square.bitrep();
 
                             let attackers = board_copy.attackers(king_square, opponent_color);
                             if attackers.empty() {

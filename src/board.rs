@@ -9,6 +9,7 @@ pub struct Board {
 }
 
 impl Board {
+    #[allow(dead_code)]
     pub fn starting_position() -> Board {
         return Board {
             pieces: [ Bitboard::new(0x000000000000FF00), Bitboard::new(71776119061217280),

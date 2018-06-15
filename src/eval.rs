@@ -1,9 +1,6 @@
-use bitboard::*;
 use board::*;
 use core::*;
 use moves::*;
-use moves::*;
-use game::*;
 
 pub fn recompute_score(board: &Board) -> Score {
     use PieceType::*; use Color::*;

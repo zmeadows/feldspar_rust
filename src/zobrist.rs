@@ -1,3 +1,4 @@
+/*
 use bitboard::*;
 use board::*;
 use core::*;
@@ -6,7 +7,6 @@ use moves::*;
 use tables::*;
 use game::*;
 
-/*
 struct Hash { val: u64 }
 
 impl Hash {

@@ -1,15 +1,15 @@
 #![feature(const_fn)]
+#![allow(unused_imports)]
 
 #[macro_use] extern crate bitflags;
 #[macro_use] extern crate prettytable;
 extern crate num_cpus;
 extern crate rand;
-extern crate rayon;
 extern crate time;
 
 mod core; use core::*;
 mod board; use board::*;
-mod print; // use print::*;
+mod print; use print::*;
 mod moves; use moves::*;
 mod tables; use tables::*;
 mod game; use game::*;
@@ -18,7 +18,6 @@ mod movegen; use movegen::*;
 mod perft; use perft::*;
 mod play; use play::*;
 mod eval; use eval::*;
-mod minimax; use minimax::*;
 mod alphabeta; use alphabeta::*;
 mod zobrist; use zobrist::*;
 

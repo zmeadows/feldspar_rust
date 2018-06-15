@@ -146,11 +146,11 @@ impl Score {
         Score { val: s }
     }
 
-    pub fn MAX() -> Score {
+    pub fn max() -> Score {
         Score::new(<i32>::max_value())
     }
 
-    pub fn MIN() -> Score {
+    pub fn min() -> Score {
         Score::new(<i32>::min_value())
     }
 }

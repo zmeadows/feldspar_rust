@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use bitboard::*;
 use board::*;
 use core::*;
@@ -117,7 +119,7 @@ impl PerftContext {
             None => {}
         }
 
-        if (self.game.king_attackers.population() > 0) {
+        if self.game.king_attackers.population() > 0 {
             self.result.checks[current_depth - 1] += 1;
         }
 
@@ -131,15 +133,15 @@ impl PerftContext {
 
             self.result.node_count[current_depth] += 1;
 
-            if (m.flag() == EP_CAPTURE_FLAG) {
+            if m.flag() == EP_CAPTURE_FLAG {
                 self.result.ep_captures[current_depth] += 1;
             }
 
-            if (m.is_capture()) {
+            if m.is_capture() {
                 self.result.captures[current_depth] += 1;
             }
 
-            if (m.flag() == KING_CASTLE_FLAG || m.flag() == QUEEN_CASTLE_FLAG) {
+            if m.flag() == KING_CASTLE_FLAG || m.flag() == QUEEN_CASTLE_FLAG {
                 self.result.castles[current_depth] += 1;
             }
 
@@ -252,7 +254,7 @@ pub fn perft(game: Game, depth: usize) {
 
     for i in 0 .. 20 {
         let c = final_result.node_count[i];
-        if (c != 0) {
+        if c != 0 {
 
             table.add_row(Row::new(vec![
                                    Cell::new(&i.to_string()),

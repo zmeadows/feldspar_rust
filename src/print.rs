@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 extern crate colored;
 use print::colored::Colorize;
 

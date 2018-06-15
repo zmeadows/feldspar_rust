@@ -1,16 +1,9 @@
-use bitboard::*;
-use board::*;
 use core::*;
-use eval::*;
-use moves::*;
-use moves::*;
-use tables::*;
 use game::*;
 use movegen::*;
-use eval::*;
+use moves::*;
 
-use std::thread;
-use rayon::prelude::*;
+// use std::thread;
 
 struct AlphaBetaContext {
     max_depth: usize,
@@ -29,7 +22,7 @@ impl AlphaBetaContext {
     }
 
     fn maxi(&mut self, mut alpha: Score, beta: Score, depth: usize, move_stack: &MoveStack) -> Score {
-        if (depth == self.max_depth) {
+        if depth == self.max_depth {
             return self.game.score;
         }
 
@@ -56,7 +49,7 @@ impl AlphaBetaContext {
     }
 
     fn mini(&mut self, alpha: Score, mut beta: Score, depth: usize, move_stack: &MoveStack) -> Score {
-        if (depth == self.max_depth) {
+        if depth == self.max_depth {
             return self.game.score;
         }
 
@@ -95,8 +88,8 @@ pub fn alphabeta(game: &Game, depth: usize) -> Move {
             let move_stack = MoveStack::new();
 
             let score = match game.to_move {
-                Color::White => context.mini(Score::MIN(), Score::MAX(), 1, &move_stack),
-                Color::Black => context.maxi(Score::MIN(), Score::MAX(), 1, &move_stack)
+                Color::White => context.mini(Score::min(), Score::max(), 1, &move_stack),
+                Color::Black => context.maxi(Score::min(), Score::max(), 1, &move_stack)
             };
 
             return (*move_candidate, score);

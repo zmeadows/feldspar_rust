@@ -2,12 +2,8 @@ use bitboard::*;
 use board::*;
 use core::*;
 use moves::*;
-use moves::*;
 use tables::*;
 use eval::*;
-
-use std::collections::HashMap;
-use std::num;
 
 bitflags! {
     pub struct CastlingRights: u8 {
@@ -37,6 +33,7 @@ pub struct Game {
 }
 
 impl Game {
+    #[allow(dead_code)]
     pub fn starting_position() -> Game {
         Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
     }
@@ -69,7 +66,7 @@ impl Game {
             return Some(GameResult::Draw);
         }
 
-        if (self.board.occupied().population() == 2) {
+        if self.board.occupied().population() == 2 {
             return Some(GameResult::Draw);
         }
 
@@ -131,7 +128,7 @@ impl Game {
 
         let mut castling_str = String::new();
 
-        if (self.castling_rights == CastlingRights::empty()) {
+        if self.castling_rights == CastlingRights::empty() {
             castling_str = "-".to_string();
         } else {
             if self.castling_rights.intersects(CastlingRights::WHITE_KINGSIDE) {
@@ -284,7 +281,7 @@ impl Game {
         let moved_piece = self.board.piece_at(from_sq).unwrap();
         let mut captured_piece = None;
 
-        if (is_capture) {
+        if is_capture {
             match to_sq.idx() {
                 0 => self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE),
                 7 => self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE),
@@ -427,12 +424,12 @@ impl Game {
                     White => {
                         self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE);
                         self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE);
-                        if (flag == KING_CASTLE_FLAG) {
+                        if flag == KING_CASTLE_FLAG {
                             let rook_bit = Square::new(0).bitrep() | Square::new(2).bitrep();
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
                         }
-                        if (flag == QUEEN_CASTLE_FLAG) {
+                        if flag == QUEEN_CASTLE_FLAG {
                             let rook_bit = Square::new(7).bitrep() | Square::new(4).bitrep();
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
@@ -442,12 +439,12 @@ impl Game {
                     Black => {
                         self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE);
                         self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE);
-                        if (flag == KING_CASTLE_FLAG) {
+                        if flag == KING_CASTLE_FLAG {
                             let rook_bit = Square::new(56).bitrep() | Square::new(58).bitrep();
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
                         }
-                        if (flag == QUEEN_CASTLE_FLAG) {
+                        if flag == QUEEN_CASTLE_FLAG {
                             let rook_bit = Square::new(63).bitrep() | Square::new(60).bitrep();
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
@@ -476,7 +473,7 @@ impl Game {
 
         self.king_attackers = self.board.attackers(king_square, !self.to_move);
 
-        if (self.to_move == White) {
+        if self.to_move == White {
             self.moves_played += 1;
         }
     }

@@ -14,19 +14,18 @@ pub struct Bitboard(u64);
 impl Bitboard {
     pub const fn new(bb: u64) -> Bitboard { return Bitboard(bb); }
 
-    //TODO: test performance of alternative: De Bruijn Multiplication
+    //TODO: test performance of alternative? De Bruijn Multiplication
     pub fn bitscan_forward(self) -> Square { return Square::new(self.0.trailing_zeros()); }
     pub fn bitscan_reverse(self) -> Square { return Square::new(63 - self.0.leading_zeros()); }
     pub fn nonempty(self) -> bool { return self.0 != 0; }
     pub fn empty(self) -> bool { return self.0 == 0; }
 
-    pub fn shifted_left(self) -> Bitboard { return Bitboard(self.0 >> 1); }
-    pub fn shifted_right(self) -> Bitboard { return Bitboard(self.0 << 1); }
-    pub fn shifted_down(self) -> Bitboard { return Bitboard(self.0 >> 8); }
     pub fn shifted_up(self) -> Bitboard { return Bitboard(self.0 << 8); }
+    pub fn shifted_down(self) -> Bitboard { return Bitboard(self.0 >> 8); }
+    // pub fn shifted_left(self) -> Bitboard { return Bitboard(self.0 >> 1); }
+    // pub fn shifted_right(self) -> Bitboard { return Bitboard(self.0 << 1); }
 
     pub fn population(self) -> u32 { self.0.count_ones() }
-    pub fn unwrap(self) -> u64 { return self.0; }
 }
 
 impl BitAnd for Bitboard {

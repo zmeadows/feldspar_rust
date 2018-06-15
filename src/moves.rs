@@ -48,6 +48,7 @@ impl Move {
         return self.flag() & 0b1000 != 0;
     }
 
+    #[allow(dead_code)]
     pub fn unwrap(&self) -> u32 {
         return self.0;
     }
@@ -78,6 +79,7 @@ impl MoveList {
 
     pub fn len(&self) -> usize { self.count }
 
+    #[allow(dead_code)]
     pub fn at(&self, idx: usize) -> Move { return self.moves[idx]; }
 }
 
@@ -125,7 +127,7 @@ impl MoveStack {
     pub fn new() -> MoveStack {
         let mut new_stack = Vec::new();
 
-        for i in 0 .. 500 {
+        for _ in 0 .. 500 {
             new_stack.push(alloc_move_buffer());
         }
 
