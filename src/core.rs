@@ -154,4 +154,3 @@ impl Score {
         Score::new(<i32>::min_value())
     }
 }
-

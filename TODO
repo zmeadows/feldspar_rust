@@ -1,5 +1,1 @@
-fix all rust build warnings
-
-re-test perft
-
 clean up make_move function

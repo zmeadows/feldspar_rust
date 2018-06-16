@@ -42,7 +42,6 @@ impl AlphaBetaContext {
             if score > alpha {
                 alpha = score; // alpha acts like max in MiniMax
             }
-
         }
 
         return alpha;

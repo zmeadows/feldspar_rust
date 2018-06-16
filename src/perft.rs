@@ -198,7 +198,7 @@ impl PerftContext {
 // }
 
 pub fn perft(game: Game, depth: usize) {
-    let num_cpus = 5;
+    let num_cpus = 6;
 
     let mut move_gen = MoveGen::new();
     let move_buffer = alloc_move_buffer();
@@ -287,7 +287,7 @@ pub fn perft(game: Game, depth: usize) {
     table.printstd();
 
     println!("Total Nodes Processed: {}", total_nodes);
-    println!("MNodes/Sec: {}", 1e-6 * total_nodes as f64 / (start_time.to(end_time).num_milliseconds() as f64 / 1000.0));
+    println!("MNodes/Sec: {:.2}", 1e-6 * total_nodes as f64 / (start_time.to(end_time).num_milliseconds() as f64 / 1000.0));
 
 }
 

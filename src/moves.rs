@@ -52,6 +52,10 @@ impl Move {
     pub fn unwrap(&self) -> u32 {
         return self.0;
     }
+
+    pub fn null() -> Move {
+        Move::new(Square::new(0), Square::new(0), 0)
+    }
 }
 
 #[derive(Clone, Copy)]

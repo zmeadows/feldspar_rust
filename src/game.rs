@@ -5,6 +5,8 @@ use moves::*;
 use tables::*;
 use eval::*;
 
+use std::str::SplitWhitespace;
+
 bitflags! {
     pub struct CastlingRights: u8 {
         const WHITE_KINGSIDE  = 0b0001;
@@ -28,6 +30,7 @@ pub struct Game {
     pub castling_rights: CastlingRights,
     pub fifty_move_count: u8,
     pub moves_played: u16,
+    pub recent_moves: [Move;6],
     pub king_attackers: Bitboard,
     pub score: Score
 }
@@ -35,7 +38,15 @@ pub struct Game {
 impl Game {
     #[allow(dead_code)]
     pub fn starting_position() -> Game {
-        Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
+        Game::from_fen_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
+    }
+
+    pub fn is_draw_by_repitition(&self) -> bool {
+        self.moves_played > 6
+            && self.recent_moves[0] == self.recent_moves[2]
+            && self.recent_moves[2] == self.recent_moves[4]
+            && self.recent_moves[1] == self.recent_moves[3]
+            && self.recent_moves[3] == self.recent_moves[5]
     }
 
     pub fn empty_position() -> Game {
@@ -46,6 +57,7 @@ impl Game {
             castling_rights: CastlingRights::empty(),
             fifty_move_count: 0,
             moves_played: 0,
+            recent_moves: [Move::null(); 6],
             king_attackers: Bitboard::new(0),
             score: Score::new(0)
         }
@@ -67,6 +79,10 @@ impl Game {
         }
 
         if self.board.occupied().population() == 2 {
+            return Some(GameResult::Draw);
+        }
+
+        if self.is_draw_by_repitition() {
             return Some(GameResult::Draw);
         }
 
@@ -159,13 +175,13 @@ impl Game {
         ].join(" ");
     }
 
-    pub fn from_fen(fen: &'static str) -> Option<Game> {
-        let words: Vec<&str> = fen.split(' ').collect();
+    pub fn from_fen_str<'a>(fen: &'a str) -> Option<Game> {
+        let mut fen_split = fen.split_whitespace();
+        Game::from_fen(&mut fen_split)
+    }
 
-        if words.len() != 6 {
-            return None;
-        }
 
+    pub fn from_fen<'a>(args: &mut SplitWhitespace<'a>) -> Option<Game> {
         let mut game = Game::empty_position();
 
         use PieceType::*;
@@ -185,7 +201,7 @@ impl Game {
                 decrement_square(sq, 1);
             };
 
-            for ch in words[0].chars() {
+            for ch in args.next().expect("Missing FEN string").chars() {
                 match ch {
                     'p' => add_piece(Black , Pawn   , &mut current_square) ,
                     'n' => add_piece(Black , Knight , &mut current_square) ,
@@ -207,6 +223,7 @@ impl Game {
                     '6' => decrement_square(&mut current_square, 6),
                     '7' => decrement_square(&mut current_square, 7),
                     '8' =>
+                    //TODO: fix this ugly code
                         if current_square.idx() == 7 {
                             decrement_square(&mut current_square, 7)
                         } else {
@@ -218,13 +235,13 @@ impl Game {
             }
         }
 
-        match words[1] {
+        match args.next().expect("Missing color-to-move in FEN string") {
             "w" => game.to_move = White,
             "b" => game.to_move = Black,
             _ => return None
         }
 
-        for ch in words[2].chars() {
+        for ch in args.next().expect("Missing castling rights in FEN string").chars() {
             match ch {
                 'K' => game.castling_rights |= CastlingRights::WHITE_KINGSIDE,
                 'Q' => game.castling_rights |= CastlingRights::WHITE_QUEENSIDE,
@@ -235,27 +252,23 @@ impl Game {
             }
         }
 
-        match words[3] {
-            "-" => game.ep_square = None,
-            _ => match Square::from_algebraic(words[3]) {
-                None => return None,
-                Some(sq) => game.ep_square = Some(sq)
-            }
+        match Square::from_algebraic(args.next().expect("Missing en-passante square in FEN string")) {
+            None => game.ep_square = None,
+            Some(sq) => game.ep_square = Some(sq)
         }
 
-        match words[4].parse::<u8>() {
+        match args.next().expect("Missing fifty move count in FEN string").parse::<u8>() {
             Err(_) => return None,
             Ok(x) => game.fifty_move_count = x
         }
 
-        match words[5].parse::<u16>() {
+        match args.next().expect("Missing move count in FEN string").parse::<u16>() {
             Err(_) => return None,
             Ok(x) => game.moves_played = x
         }
 
         let king_square     = game.board.get_king_square(game.to_move);
         game.king_attackers = game.board.attackers(king_square, !game.to_move);
-
         game.score = recompute_score(&game.board);
 
         return Some(game);
@@ -469,12 +482,25 @@ impl Game {
             self.fifty_move_count += 1;
         }
 
+        if self.fifty_move_count >= 50 {
+            self.score = Score::new(0);
+        }
+
         self.to_move = !self.to_move;
 
         self.king_attackers = self.board.attackers(king_square, !self.to_move);
 
         if self.to_move == White {
             self.moves_played += 1;
+        }
+
+        for i in 0 .. 5 {
+            self.recent_moves[i] = self.recent_moves[i+1]
+        }
+        self.recent_moves[5] = m;
+
+        if self.is_draw_by_repitition() {
+            self.score = Score::new(0);
         }
     }
 }

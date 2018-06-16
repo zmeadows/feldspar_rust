@@ -4,6 +4,7 @@ use moves::*;
 use board::*;
 use tables::*;
 use game::*;
+use pins::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -11,16 +12,14 @@ use std::cell::RefMut;
 
 #[derive(Clone, Copy)]
 pub struct MoveGen {
-    diag_pin_map: [Bitboard; 64],
-    nondiag_pin_map: [Bitboard; 64]
+    pin_finder: PinFinder
 }
 
 impl MoveGen {
     pub fn new() -> MoveGen {
-        return MoveGen {
-            diag_pin_map: [Bitboard::new(0); 64],
-            nondiag_pin_map: [Bitboard::new(0); 64]
-        };
+        MoveGen {
+            pin_finder: PinFinder::new()
+        }
     }
 
     pub fn next_states(game: &Game) -> Vec<(Move, Game)> {
@@ -105,31 +104,9 @@ impl MoveGen {
             }
         }
 
-        let mut pinned_diagonally = Bitboard::new(0);
-        let mut pinned_nondiagonally = Bitboard::new(0);
-
-        {
-            let op_rq = game.board.get_pieces(opponent_color, Rook) | game.board.get_pieces(opponent_color, Queen);
-            let mut pinner = xray_rook_attacks(occupied_squares, friendly_pieces, king_square) & op_rq;
-            for pinner_square in pinner {
-                let connecting_bits = ray_between_squares(king_square, pinner_square);
-                let pinned_bit = connecting_bits & friendly_pieces;
-                self.nondiag_pin_map[pinned_bit.bitscan_forward().idx()] = connecting_bits;
-                assert!(pinned_bit.population() == 1);
-                pinned_nondiagonally |= pinned_bit;
-            }
-
-            let op_bq = game.board.get_pieces(opponent_color, Bishop) | game.board.get_pieces(opponent_color, Queen);
-            pinner = xray_bishop_attacks(occupied_squares, friendly_pieces, king_square) & op_bq;
-            for pinner_square in pinner {
-                let connecting_bits = ray_between_squares(king_square, pinner_square);
-                let pinned_bit = connecting_bits & friendly_pieces;
-                self.diag_pin_map[pinned_bit.bitscan_forward().idx()] = connecting_bits;
-                assert!(pinned_bit.population() == 1);
-                pinned_diagonally |= pinned_bit;
-            }
-        }
-
+        self.pin_finder.update(friendly_color, &game.board);
+        let pinned_diagonally = self.pin_finder.pinned_diagonally();
+        let pinned_nondiagonally = self.pin_finder.pinned_nondiagonally();
         let pinned = pinned_diagonally | pinned_nondiagonally;
 
         let friendly_pawns = game.board.get_pieces(friendly_color, Pawn);
@@ -165,7 +142,7 @@ impl MoveGen {
 
                 // todo: don't do inner loop test, just separate move generation for pinned pawns.
                 if (from.bitrep() & pinned_nondiagonally).nonempty()
-                    && (to.bitrep() & self.nondiag_pin_map[from.idx()]).empty() {
+                    && (to.bitrep() & self.pin_finder.nondiagonal_constraint(from)).empty() {
                         continue;
                 }
 
@@ -184,7 +161,7 @@ impl MoveGen {
                 let from = Square::new((to.unwrap() as i32 + delta_pawn_double_push) as u32);
 
                 if (from.bitrep() & pinned_nondiagonally).nonempty()
-                    && (to.bitrep() & self.nondiag_pin_map[from.idx()]).empty() {
+                    && (to.bitrep() & self.pin_finder.nondiagonal_constraint(from)).empty() {
                         continue;
                 }
 
@@ -198,7 +175,7 @@ impl MoveGen {
             {
                 let mut pawn_attack_pattern = PAWN_ATTACKS[friendly_color as usize][from.idx()] & capture_mask;
                 if (from.bitrep() & pinned_diagonally).nonempty() {
-                    pawn_attack_pattern &= self.diag_pin_map[from.idx()];
+                    pawn_attack_pattern &= self.pin_finder.diagonal_constraint(from);
                 }
 
                 for to in pawn_attack_pattern & opponent_pieces
@@ -288,7 +265,8 @@ impl MoveGen {
             // PINNED
             for from in friendly_bishops & pinned_diagonally
             {
-                let bishop_moves = get_bishop_rays(from, occupied_squares) & self.diag_pin_map[from.idx()];
+                let bishop_moves = get_bishop_rays(from, occupied_squares)
+                                   & self.pin_finder.diagonal_constraint(from);
 
                 // quiets
                 for to in bishop_moves & empty_squares & quiet_mask {
@@ -330,7 +308,8 @@ impl MoveGen {
             // pinned
             for from in friendly_rooks & pinned_nondiagonally
             {
-                let rook_moves = get_rook_rays(from, occupied_squares) & self.nondiag_pin_map[from.idx()];
+                let rook_moves = get_rook_rays(from, occupied_squares)
+                                 & self.pin_finder.nondiagonal_constraint(from);
 
                 /* quiets */
                 for to in rook_moves & empty_squares & quiet_mask {
@@ -369,7 +348,8 @@ impl MoveGen {
 
             for from in movable_pinned_queens & pinned_diagonally
             {
-                let queen_moves = get_queen_rays(from, occupied_squares) & self.diag_pin_map[from.idx()];
+                let queen_moves = get_queen_rays(from, occupied_squares)
+                                  & self.pin_finder.diagonal_constraint(from);
 
                 /* quiets */
                 for to in queen_moves & empty_squares & quiet_mask {
@@ -384,7 +364,8 @@ impl MoveGen {
 
             for from in movable_pinned_queens & pinned_nondiagonally
             {
-                let queen_moves = get_queen_rays(from, occupied_squares) & self.nondiag_pin_map[from.idx()];
+                let queen_moves = get_queen_rays(from, occupied_squares)
+                                  & self.pin_finder.nondiagonal_constraint(from);
 
                 /* quiets */
                 for to in queen_moves & empty_squares & quiet_mask {
@@ -480,7 +461,7 @@ impl MoveGen {
     }
 }
 
-pub fn move_from_algebraic(game: Game, move_str: String) -> Option<Move> {
+pub fn move_from_algebraic(game: &Game, move_str: String) -> Option<Move> {
     let from_str = move_str[..2].to_string();
     let to_str = move_str[2..].to_string();
 

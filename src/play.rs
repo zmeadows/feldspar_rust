@@ -3,7 +3,7 @@ use movegen::*;
 use alphabeta::*;
 
 pub fn play_against_ai() {
-    let mut game = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+    let mut game = Game::from_fen_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
 
     loop {
         game.board.print();
@@ -21,7 +21,7 @@ pub fn play_against_ai() {
             s.pop();
         }
 
-        match move_from_algebraic(game, s) {
+        match move_from_algebraic(&game, s) {
             Some(m) => {
                 game.make_move(m);
                 let ai_move = alphabeta(&game,7);
