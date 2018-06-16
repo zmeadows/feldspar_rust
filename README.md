@@ -6,7 +6,7 @@ This is a bitboard-based chess engine with two major goals:
 2. Implementation of a Monte Carlo Tree Search (MCTS) using shallow alpha-beta search rather than random playouts.
 
 ## Version History
-#### v0.1
+### v0.1
 
 * Verified 100% accurate legal move generation
 * Basic alpha beta search of constant depth 7
