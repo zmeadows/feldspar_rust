@@ -74,7 +74,7 @@ impl MoveGen {
         let opponent_pieces  = game.board.occupied_by(!friendly_color);
 
         let king_square         = game.board.get_king_square(friendly_color);
-        let king_attackers      = game.board.attackers(king_square, opponent_color);
+        let king_attackers      = game.king_attackers;
         let check_multiplicity  = king_attackers.population();
         let in_check            = check_multiplicity > 0;
         let king_moves          = KING_TABLE[king_square.idx()];
@@ -191,7 +191,6 @@ impl MoveGen {
                 }
 
                 match game.ep_square {
-                    //TODO: en-passante discovered check test
                     Some(ep_capture_square) => {
                         let captured_sq = match opponent_color {
                                 White => Square::new(ep_capture_square.unwrap() + 8),

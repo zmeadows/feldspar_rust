@@ -1,5 +1,6 @@
 #![feature(const_fn)]
 #![allow(unused_imports)]
+#![feature(extern_prelude)]
 
 #[macro_use] extern crate bitflags;
 #[macro_use] extern crate prettytable;
