@@ -3,7 +3,7 @@ use game::*;
 use movegen::*;
 use moves::*;
 
-// use std::thread;
+use std::thread;
 
 struct AlphaBetaContext {
     max_depth: usize,
@@ -75,31 +75,68 @@ impl AlphaBetaContext {
 }
 
 pub fn alphabeta(game: &Game, depth: usize) -> Move {
-    let next_states = MoveGen::next_states(&game);
+    let num_cpus = num_cpus::get() - 2;
+    let next_states = MoveGen::next_states_chunked(&game, false, num_cpus);
+
+    eprintln!("static score: {:?}", game.score);
 
     if next_states.len() == 0 {
         panic!("finished game passed to alphabeta!");
     }
 
-    let mut move_scores: Vec<(Move, Score)> = MoveGen::next_states(&game).iter().map(
-        |(move_candidate, game_candidate)| -> (Move, Score) {
-            let mut context = AlphaBetaContext::new(game_candidate, depth - 1);
-            let move_stack = MoveStack::new();
+    let mut threads = Vec::new();
 
-            let score = match game.to_move {
-                Color::White => context.mini(Score::min(), Score::max(), 1, &move_stack),
-                Color::Black => context.maxi(Score::min(), Score::max(), 1, &move_stack)
+    for move_subset in next_states {
+
+        let to_move = game.to_move;
+
+        threads.push(thread::spawn(move || {
+            let mut best_score = match to_move {
+                Color::White => Score::min(),
+                Color::Black => Score::max()
             };
 
-            return (*move_candidate, score);
-        }).collect();
+            let mut best_move = move_subset.first().unwrap().0;
 
-    match game.to_move {
-        Color::White => move_scores.sort_by(|a, b| b.1.val.partial_cmp(&a.1.val).unwrap()),
-        Color::Black => move_scores.sort_by(|a, b| a.1.val.partial_cmp(&b.1.val).unwrap())
+            let move_stack = MoveStack::new();
+
+            for (m, g) in move_subset.iter() {
+                let mut context = AlphaBetaContext::new(g, depth - 1);
+                let score = match to_move {
+                    Color::White => context.mini(Score::min(), Score::max(), 1, &move_stack),
+                    Color::Black => context.maxi(Score::min(), Score::max(), 1, &move_stack)
+                };
+
+                match to_move {
+                    Color::White => if score > best_score {
+                        best_score = score;
+                        best_move = *m;
+                    },
+                    Color::Black => if score < best_score {
+                        best_score = score;
+                        best_move = *m;
+                    }
+                }
+            }
+
+            return (best_move, best_score);
+        }));
     }
 
-    println!("ab score: {:?}", move_scores.first().unwrap().1);
-    return move_scores.first().unwrap().0;
+    let mut results = Vec::new();
+
+    for thread in threads {
+        match thread.join() {
+            Ok(result) => results.push(result),
+            Err(_) => println!("Failed to join threads for alphabeta search.")
+        }
+    }
+
+    match game.to_move {
+        Color::White => results.sort_by(|a, b| b.1.val.partial_cmp(&a.1.val).unwrap()),
+        Color::Black => results.sort_by(|a, b| a.1.val.partial_cmp(&b.1.val).unwrap())
+    }
+
+    return results.first().unwrap().0;
 }
 

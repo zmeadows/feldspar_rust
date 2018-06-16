@@ -1,1 +1,3 @@
-clean up make_move function
+URGENT: account for promotions when converting move list from Arena
+detect stalemate and checkmate at end of make_move function and modify score accordingly
+clean up make_move

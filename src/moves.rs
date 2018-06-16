@@ -2,6 +2,7 @@ use core::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use rand::Rng;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Move(u32);
@@ -85,6 +86,16 @@ impl MoveList {
 
     #[allow(dead_code)]
     pub fn at(&self, idx: usize) -> Move { return self.moves[idx]; }
+
+    pub fn shuffle(&mut self) {
+        for _ in 0 .. self.len() * 4 {
+            let i = rand::thread_rng().gen_range(0, self.moves.len() - 1);
+            let j = rand::thread_rng().gen_range(0, self.moves.len() - 1);
+            if i != j {
+                self.moves.swap(i,j);
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy)]

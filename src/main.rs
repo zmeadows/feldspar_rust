@@ -29,8 +29,9 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
-    perft(g, 5);
+    //let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    let g = Game::starting_position();
+    perft(g, 6);
     //g.board.print();
     //alphabeta(&g,7).print();
     //play_against_ai();

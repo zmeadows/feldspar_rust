@@ -22,12 +22,15 @@ impl MoveGen {
         }
     }
 
-    pub fn next_states(game: &Game) -> Vec<(Move, Game)> {
+    pub fn next_states(game: &Game, shuffle: bool) -> Vec<(Move, Game)> {
         let mut states = Vec::new();
 
         let mut move_gen = MoveGen::new();
         let move_buffer = alloc_move_buffer();
         move_gen.fill_move_buffer(&game, &move_buffer);
+        if shuffle {
+            move_buffer.borrow_mut().shuffle();
+        }
 
         for m in move_buffer.borrow().iter() {
             let mut game_copy = game.clone();
@@ -39,16 +42,16 @@ impl MoveGen {
     }
 
     #[allow(dead_code)]
-    pub fn next_states_chunked(game: &Game, num_cpu_cores: usize) -> Vec<Vec<(Move, Game)>> {
-        let states = MoveGen::next_states(game);
+    pub fn next_states_chunked(game: &Game, shuffle: bool, num_cpu_cores: usize) -> Vec<Vec<(Move, Game)>> {
+        let states = MoveGen::next_states(game, shuffle);
         let mut chunks = Vec::new();
-
-        for _ in 0 .. num_cpu_cores {
-            chunks.push(Vec::new());
-        }
 
         let mut i = 0;
         for x in states.iter() {
+            let idx = i % num_cpu_cores;
+            if chunks.len() <= idx  {
+                chunks.push(Vec::new());
+            }
             chunks[i % num_cpu_cores].push(x.clone());
             i += 1;
         }

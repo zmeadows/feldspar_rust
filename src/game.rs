@@ -30,7 +30,7 @@ pub struct Game {
     pub castling_rights: CastlingRights,
     pub fifty_move_count: u8,
     pub moves_played: u16,
-    pub recent_moves: [Move;6],
+    pub recent_moves: [Move;8],
     pub king_attackers: Bitboard,
     pub score: Score
 }
@@ -42,11 +42,11 @@ impl Game {
     }
 
     pub fn is_draw_by_repitition(&self) -> bool {
-        self.moves_played > 6
-            && self.recent_moves[0] == self.recent_moves[2]
-            && self.recent_moves[2] == self.recent_moves[4]
-            && self.recent_moves[1] == self.recent_moves[3]
-            && self.recent_moves[3] == self.recent_moves[5]
+        self.moves_played > 8
+            && self.recent_moves[0] == self.recent_moves[4]
+            && self.recent_moves[2] == self.recent_moves[6]
+            && self.recent_moves[1] == self.recent_moves[5]
+            && self.recent_moves[3] == self.recent_moves[7]
     }
 
     pub fn empty_position() -> Game {
@@ -57,7 +57,7 @@ impl Game {
             castling_rights: CastlingRights::empty(),
             fifty_move_count: 0,
             moves_played: 0,
-            recent_moves: [Move::null(); 6],
+            recent_moves: [Move::null(); 8],
             king_attackers: Bitboard::new(0),
             score: Score::new(0)
         }
@@ -315,6 +315,7 @@ impl Game {
 
             captured_piece = self.board.piece_at(captured_square);
 
+            //FIXME: redundant with else statement right below, move out above
             self.score.remove_piece(moved_piece, from_sq);
             self.score.add_piece(moved_piece, to_sq);
             self.score.remove_piece(captured_piece.unwrap(), captured_square);
@@ -325,7 +326,7 @@ impl Game {
 
         assert!(is_capture == captured_piece.is_some());
 
-        //TODO: add moving/captured piece type to Move structure
+        //IDEA: add moving/captured piece type to Move structure?
         match moved_piece.ptype {
             Pawn => {
                 *self.board.get_pieces_mut(self.to_move, Pawn) ^= from_to_bit;
@@ -494,10 +495,10 @@ impl Game {
             self.moves_played += 1;
         }
 
-        for i in 0 .. 5 {
+        for i in 0 .. 7 {
             self.recent_moves[i] = self.recent_moves[i+1]
         }
-        self.recent_moves[5] = m;
+        self.recent_moves[7] = m;
 
         if self.is_draw_by_repitition() {
             self.score = Score::new(0);
@@ -508,6 +509,7 @@ impl Game {
 #[cfg(test)]
 mod test {
     use game::*;
+
     #[test]
     fn test_fen() {
         let fen_strings: Vec<&'static str> = vec![
@@ -526,7 +528,7 @@ mod test {
         ];
 
         for fen in fen_strings.iter() {
-            let g = Game::from_fen(fen).unwrap();
+            let g = Game::from_fen_str(fen).unwrap();
             assert!(&g.to_fen() == fen);
         }
     }
