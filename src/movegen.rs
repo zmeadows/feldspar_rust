@@ -464,31 +464,59 @@ impl MoveGen {
 }
 
 pub fn move_from_algebraic(game: &Game, move_str: String) -> Option<Move> {
-    let from_str = move_str[..2].to_string();
-    let to_str = move_str[2..].to_string();
+    if (move_str.len() !=4 && move_str.len() != 5) {
+        return None;
+    }
 
-    match Square::from_algebraic(&from_str) {
-        Some(from_sq) => {
-            match Square::from_algebraic(&to_str) {
-                Some(to_sq) => {
-                    let mut move_gen = MoveGen::new();
-                    let move_buffer = alloc_move_buffer();
-                    move_gen.fill_move_buffer(&game, &move_buffer);
-                    for m in move_buffer.borrow().iter() {
-                        if m.from() == from_sq && m.to() == to_sq {
-                            return Some(*m);
-                        }
-                    }
-                }
-                None => {
-                    println!("invalid to string: {}", to_str);
-                    return None;
-                }
+    let is_promotion = move_str.len() == 5;
+
+    let from_str = move_str[..2].to_string();
+    let to_str = move_str[2..4].to_string();
+
+    let maybe_from_sq = Square::from_algebraic(&from_str);
+    if !maybe_from_sq.is_some() {
+        return None;
+    }
+    let from_sq = maybe_from_sq.unwrap();
+
+    let maybe_to_sq = Square::from_algebraic(&to_str);
+    if !maybe_to_sq.is_some() {
+        return None;
+    }
+    let to_sq = maybe_to_sq.unwrap();
+
+    let mut move_gen = MoveGen::new();
+    let move_buffer = alloc_move_buffer();
+    move_gen.fill_move_buffer(&game, &move_buffer);
+
+    if !is_promotion {
+        for m in move_buffer.borrow().iter() {
+            if m.from() == from_sq && m.to() == to_sq {
+                return Some(*m);
             }
-        },
-        None => {
-            println!("invalid from string: {}", from_str);
-            return None;
+        }
+    } else {
+        let promo_flag = match move_str.chars().nth(4) {
+            Some('k') => KNIGHT_PROMO_FLAG,
+            Some('K') => KNIGHT_PROMO_FLAG,
+            Some('n') => KNIGHT_PROMO_FLAG,
+            Some('N') => KNIGHT_PROMO_FLAG,
+            Some('b') => BISHOP_PROMO_FLAG,
+            Some('B') => BISHOP_PROMO_FLAG,
+            Some('r') => ROOK_PROMO_FLAG,
+            Some('R') => ROOK_PROMO_FLAG,
+            Some('q') => QUEEN_PROMO_FLAG,
+            Some('Q') => QUEEN_PROMO_FLAG,
+            _ => 0
+        };
+
+
+        for m in move_buffer.borrow().iter() {
+            let move_flag = m.flag() & 0b1011; // don't need to compare capture status
+            if m.from() == from_sq && m.to() == to_sq && (move_flag == promo_flag) {
+                println!("{}", move_flag);
+                return Some(*m);
+            }
         }
     }
 

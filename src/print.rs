@@ -44,10 +44,10 @@ impl Bitboard {
             for x in row {
                 print!("{}", x.to_string().color("blue").on_color("white"));
             }
-            println!();
+            eprintln!();
         }
 
-        println!();
+        eprintln!();
     }
 
 }
@@ -64,7 +64,7 @@ impl Board {
 
         let mut row_idx = 8;
         let mut bkg_color = "black";
-        println!("   a b c d e f g h");
+        eprintln!("   a b c d e f g h");
         for row in chars.chunks(8) {
             match bkg_color {
                 "blue" => bkg_color = "white",
@@ -80,14 +80,14 @@ impl Board {
             }
             print!(" {}", row_idx.to_string());
             row_idx -= 1;
-            println!();
+            eprintln!();
         }
-        println!("   a b c d e f g h");
+        eprintln!("   a b c d e f g h");
     }
 }
 
 impl Move {
     pub fn print(&self) {
-        println!("{}{}", self.from().to_algebraic(), self.to().to_algebraic());
+        eprintln!("{}{}", self.from().to_algebraic(), self.to().to_algebraic());
     }
 }

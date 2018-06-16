@@ -23,9 +23,10 @@ impl UCIEngine for Feldspar {
     //TODO: print promotion type!
     fn find_best_move(&mut self) {
         let best_move = alphabeta(&self.game, 7);
-        println!("bestmove {}{}", best_move.from().to_algebraic(),
-                best_move.to().to_algebraic());
+        println!("bestmove {}{}", best_move.from().to_algebraic(), best_move.to().to_algebraic());
+        self.game.board.print();
     }
+
 
     fn root_node(&mut self) -> &mut Game {
         return &mut self.game;
