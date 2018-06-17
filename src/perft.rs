@@ -23,10 +23,11 @@ use prettytable::row::Row;
 const QPERFT_PATH: &'static str = "/Users/zac/Code/qperft/qperft";
 const MAX_PERFT_DEPTH: usize = 20;
 
+/*
+
 #[derive(Clone)]
 struct PerftContext {
-    move_gen: MoveGen,
-    game: Game,
+    tree: GameTree,
     result: PerftResult
 }
 
@@ -78,8 +79,7 @@ impl Add for PerftResult {
 impl PerftContext {
     fn new(perft_game: Game) -> PerftContext {
         PerftContext {
-            move_gen: MoveGen::new(),
-            game: perft_game,
+            tree: GameTree::new(&game);
             result: PerftResult::new()
         }
     }
@@ -291,6 +291,8 @@ pub fn perft(game: Game, depth: usize) {
     println!("MNodes/Sec: {:.2}", 1e-6 * total_nodes as f64 / (start_time.to(end_time).num_milliseconds() as f64 / 1000.0));
 
 }
+
+*/
 
 // pub fn qperft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
 //     let qperft_command = [

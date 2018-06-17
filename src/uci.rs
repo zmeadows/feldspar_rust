@@ -11,16 +11,19 @@ pub trait UCIEngine {
     fn init(&mut self) -> () {}
     fn reset(&mut self) -> () {}
     fn find_best_move(&mut self) -> ();
-    fn root_node(&mut self) -> &mut Game;
+    fn replace_game(&mut self, game: Game);
     //fn find_best_move(&mut self, wtime: usize, btime: usize, winc: usize, binc: usize, movestogo: usize) -> ();
     // fn infinite_search(&mut self) -> ();
 
     //TODO: move to UCIEngine trait default implementation
     fn update_position<'a>(&mut self, args: &mut SplitWhitespace<'a>) {
+
+        let mut g = Game::empty_position();
+        
         match args.next() {
-            Some("startpos") => *self.root_node() = Game::starting_position(),
+            Some("startpos") => g = Game::starting_position(),
             Some("fen") => {
-                *self.root_node() = Game::from_fen(args).unwrap();
+                g = Game::from_fen(args).unwrap();
             }
             _ => {
                 eprintln!("error! invalid position string passed!");
@@ -35,12 +38,14 @@ pub trait UCIEngine {
 
         loop {
             if let Some(move_str) = args.next() {
-                let m = move_from_algebraic(&self.root_node(), move_str.to_string()).unwrap();
-                self.root_node().make_move(m);
+                let m = move_from_algebraic(&g, move_str.to_string()).unwrap();
+                g.make_move(m);
             } else {
                 break;
             }
         }
+
+        self.replace_game(g);
     }
 
     fn run(&mut self) -> () {

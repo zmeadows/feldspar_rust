@@ -8,7 +8,7 @@ extern crate num_cpus;
 extern crate rand;
 extern crate time;
 
-mod alphabeta; use alphabeta::*;
+mod search; use search::*;
 mod bitboard; use bitboard::*;
 mod board; use board::*;
 mod core; use core::*;
@@ -17,6 +17,7 @@ mod feldspar; use feldspar::*;
 mod game; use game::*;
 mod movegen; use movegen::*;
 mod moves; use moves::*;
+mod move_list; use move_list::*;
 mod perft; use perft::*;
 mod pins; use pins::*;
 mod play; use play::*;
@@ -24,6 +25,7 @@ mod print; use print::*;
 mod tables; use tables::*;
 mod uci; use uci::*;
 mod zobrist; use zobrist::*;
+mod tree; use tree::*;
 
 fn main() {
     use Color::*;
@@ -34,7 +36,7 @@ fn main() {
     // perft(g, 6);
     //g.board.print();
     //alphabeta(&g,7).print();
-    //play_against_ai();
+    play_against_ai();
 
     
     // if true {
@@ -52,7 +54,7 @@ fn main() {
     //     println!("moves: {}", move_buffer.borrow().len());
     // }
 
-    let mut f = Feldspar::new();
-    f.run();
+    // let mut f = Feldspar::new();
+    // f.run();
 }
 

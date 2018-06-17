@@ -1,14 +1,15 @@
 use game::*;
 use movegen::*;
-use alphabeta::*;
+use search::*;
+use tree::*;
 
 pub fn play_against_ai() {
-    let mut game = Game::from_fen_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+    let mut tree = GameTree::new(Game::starting_position());
 
     loop {
-        game.board.print();
-        println!("{}", game.to_fen());
-        println!("score: {}", game.score.val);
+        tree.game.board.print();
+        println!("{}", tree.game.to_fen());
+        println!("score: {}", tree.game.score.val);
         use std::io::{stdin,stdout,Write};
         let mut s=String::new();
         print!("Enter your move: ");
@@ -21,11 +22,12 @@ pub fn play_against_ai() {
             s.pop();
         }
 
-        match move_from_algebraic(&game, s) {
+        match move_from_algebraic(&tree.game, s) {
             Some(m) => {
-                game.make_move(m);
-                let ai_move = alphabeta(&game,7);
-                game.make_move(ai_move);
+                tree.make_move(m);
+                tree.trim();
+                let (ai_move, _) = alpha_beta(&mut tree,9);
+                tree.make_move(ai_move);
             },
             None => println!("Invalid move!")
         }

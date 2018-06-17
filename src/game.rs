@@ -41,7 +41,7 @@ impl Game {
         Game::from_fen_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
     }
 
-    pub fn is_draw_by_repitition(&self) -> bool {
+    pub fn is_draw_by_repetition(&self) -> bool {
         self.moves_played > 8
             && self.recent_moves[0] == self.recent_moves[4]
             && self.recent_moves[2] == self.recent_moves[6]
@@ -61,32 +61,6 @@ impl Game {
             king_attackers: Bitboard::new(0),
             score: Score::new(0)
         }
-    }
-
-    pub fn outcome(&self, move_count: usize) -> Option<GameResult> {
-        let check_multiplicity  = self.king_attackers.population();
-
-        if move_count == 0 && check_multiplicity > 0 {
-            return Some(GameResult::Win(!self.to_move));
-        }
-
-        if move_count == 0 && check_multiplicity == 0 {
-            return Some(GameResult::Draw);
-        }
-
-        if self.fifty_move_count >= 50 {
-            return Some(GameResult::Draw);
-        }
-
-        if self.board.occupied().population() == 2 {
-            return Some(GameResult::Draw);
-        }
-
-        if self.is_draw_by_repitition() {
-            return Some(GameResult::Draw);
-        }
-
-        return None;
     }
 
     pub fn to_fen(&self) -> String {
@@ -274,6 +248,32 @@ impl Game {
         return Some(game);
     }
 
+    // pub fn outcome(&self, move_count: usize) -> Option<GameResult> {
+    //     let check_multiplicity  = self.king_attackers.population();
+
+    //     if move_count == 0 && check_multiplicity > 0 {
+    //         return Some(GameResult::Win(!self.to_move));
+    //     }
+
+    //     if move_count == 0 && check_multiplicity == 0 {
+    //         return Some(GameResult::Draw);
+    //     }
+
+    //     if self.fifty_move_count >= 50 {
+    //         return Some(GameResult::Draw);
+    //     }
+
+    //     if self.board.occupied().population() == 2 {
+    //         return Some(GameResult::Draw);
+    //     }
+
+    //     if self.is_draw_by_repetition() {
+    //         return Some(GameResult::Draw);
+    //     }
+
+    //     return None;
+    // }
+
     pub fn make_move(&mut self, m: Move) {
         let from_sq        = m.from();
         let from_bit       = from_sq.bitrep();
@@ -285,15 +285,15 @@ impl Game {
         let flag           = m.flag();
         let moving_color   = self.to_move;
         let opponent_color = !moving_color;
-
-        let king_square = self.board.get_king_square(opponent_color);
+        let moved_piece    = self.board.piece_at(from_sq).unwrap();
 
         use Color::*;
         use PieceType::*;
 
-        let moved_piece = self.board.piece_at(from_sq).unwrap();
-        let mut captured_piece = None;
+        self.score.remove_piece(moved_piece, from_sq);
+        self.score.add_piece(moved_piece, to_sq);
 
+        let mut captured_piece = None;
         if is_capture {
             match to_sq.idx() {
                 0 => self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE),
@@ -316,12 +316,7 @@ impl Game {
             captured_piece = self.board.piece_at(captured_square);
 
             //FIXME: redundant with else statement right below, move out above
-            self.score.remove_piece(moved_piece, from_sq);
-            self.score.add_piece(moved_piece, to_sq);
             self.score.remove_piece(captured_piece.unwrap(), captured_square);
-        } else {
-            self.score.remove_piece(moved_piece, from_sq);
-            self.score.add_piece(moved_piece, to_sq);
         }
 
         assert!(is_capture == captured_piece.is_some());
@@ -489,7 +484,8 @@ impl Game {
 
         self.to_move = !self.to_move;
 
-        self.king_attackers = self.board.attackers(king_square, !self.to_move);
+        let opp_king_square = self.board.get_king_square(opponent_color);
+        self.king_attackers = self.board.attackers(opp_king_square, !self.to_move);
 
         if self.to_move == White {
             self.moves_played += 1;
@@ -500,7 +496,7 @@ impl Game {
         }
         self.recent_moves[7] = m;
 
-        if self.is_draw_by_repitition() {
+        if self.is_draw_by_repetition() {
             self.score = Score::new(0);
         }
     }

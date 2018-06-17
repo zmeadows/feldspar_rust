@@ -64,25 +64,25 @@ impl Board {
 
         let mut row_idx = 8;
         let mut bkg_color = "black";
-        eprintln!("   a b c d e f g h");
+        eprintln!(" a b c d e f g h");
         for row in chars.chunks(8) {
             match bkg_color {
                 "blue" => bkg_color = "white",
                 _ => bkg_color = "blue"
             }
-            print!("{} ", row_idx.to_string());
+            eprint!("{} ", row_idx.to_string());
             for x in row {
-                print!("{}", x.to_string().color("black").on_color(bkg_color).bold());
+                eprint!("{}", x.to_string().color("black").on_color(bkg_color).bold());
                 match bkg_color {
                     "blue" => bkg_color = "white",
                     _ => bkg_color = "blue"
                 }
             }
-            print!(" {}", row_idx.to_string());
+            eprint!(" {}", row_idx.to_string());
             row_idx -= 1;
             eprintln!();
         }
-        eprintln!("   a b c d e f g h");
+        eprintln!(" a b c d e f g h");
     }
 }
 
