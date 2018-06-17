@@ -81,7 +81,7 @@ impl MoveBufferData {
         let in_check            = check_multiplicity > 0;
         let king_moves          = KING_TABLE[king_square.idx()];
         //TODO: save king_danger_squares in Game
-        let king_danger_squares = game.board.attacked(opponent_color, true);
+        let king_danger_squares = game.king_danger_squares;
 
         if check_multiplicity > 1 && self.stage < MoveGenStage::MultipleCheckKing {
             // If the king is in double+ check, the only legal moves are

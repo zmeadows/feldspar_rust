@@ -32,6 +32,7 @@ pub struct Game {
     pub moves_played: u16,
     pub recent_moves: [Move;8],
     pub king_attackers: Bitboard,
+    pub king_danger_squares: Bitboard,
     pub score: Score
 }
 
@@ -59,6 +60,7 @@ impl Game {
             moves_played: 0,
             recent_moves: [Move::null(); 8],
             king_attackers: Bitboard::new(0),
+            king_danger_squares: Bitboard::new(0),
             score: Score::new(0)
         }
     }
@@ -243,6 +245,7 @@ impl Game {
 
         let king_square     = game.board.get_king_square(game.to_move);
         game.king_attackers = game.board.attackers(king_square, !game.to_move);
+        game.king_danger_squares = game.board.attacked(!game.to_move, true);
         game.score = recompute_score(&game.board);
 
         return Some(game);
@@ -499,6 +502,9 @@ impl Game {
         if self.is_draw_by_repetition() {
             self.score = Score::new(0);
         }
+
+        self.king_danger_squares = self.board.attacked(!self.to_move, true);
+
     }
 }
 

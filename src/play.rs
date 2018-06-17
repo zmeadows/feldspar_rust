@@ -26,7 +26,7 @@ pub fn play_against_ai() {
             Some(m) => {
                 tree.make_move(m);
                 tree.trim();
-                let (ai_move, _) = alpha_beta(&mut tree,9);
+                let (ai_move, _) = alpha_beta(&mut tree,6);
                 tree.make_move(ai_move);
             },
             None => println!("Invalid move!")
