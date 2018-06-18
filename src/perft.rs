@@ -456,6 +456,92 @@ mod test {
         let result = perft(g, 5);
 
         assert!(result == correct_result);
+    }
 
+    #[test]
+    fn tricky_talkchess() {
+        let mut correct_result = PerftResult::new();
+
+        correct_result.node_count[1] = 44;
+        correct_result.node_count[2] = 1486;
+        correct_result.node_count[3] = 62379;
+        correct_result.node_count[4] = 2103487;
+        correct_result.node_count[5] = 89941194;
+
+        let g = Game::from_fen_str("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
+        let result = perft(g, 5);
+
+        assert!(result.node_count[1] == correct_result.node_count[1]);
+        assert!(result.node_count[2] == correct_result.node_count[2]);
+        assert!(result.node_count[3] == correct_result.node_count[3]);
+        assert!(result.node_count[4] == correct_result.node_count[4]);
+        assert!(result.node_count[5] == correct_result.node_count[5]);
+
+    }
+
+    #[test]
+    fn tricky_en_passant() {
+        let mut correct_result = PerftResult::new();
+
+        correct_result.node_count[1] = 14;
+        correct_result.node_count[2] = 191;
+        correct_result.node_count[3] = 2812;
+        correct_result.node_count[4] = 43238;
+        correct_result.node_count[5] = 674624;
+        correct_result.node_count[6] = 11030083;
+        correct_result.node_count[7] = 178633661;
+
+        correct_result.captures[1] = 1;
+        correct_result.captures[2] = 14;
+        correct_result.captures[3] = 209;
+        correct_result.captures[4] = 3348;
+        correct_result.captures[5] = 52051;
+        correct_result.captures[6] = 940350;
+        correct_result.captures[7] = 14519036;
+
+        correct_result.ep_captures[1] = 0;
+        correct_result.ep_captures[2] = 0;
+        correct_result.ep_captures[3] = 2;
+        correct_result.ep_captures[4] = 123;
+        correct_result.ep_captures[5] = 1165;
+        correct_result.ep_captures[6] = 33325;
+        correct_result.ep_captures[7] = 294874;
+
+        correct_result.castles[1] = 0;
+        correct_result.castles[2] = 0;
+        correct_result.castles[3] = 0;
+        correct_result.castles[4] = 0;
+        correct_result.castles[5] = 0;
+        correct_result.castles[6] = 0;
+        correct_result.castles[7] = 0;
+
+        correct_result.promotions[1] = 0;
+        correct_result.promotions[2] = 0;
+        correct_result.promotions[3] = 0;
+        correct_result.promotions[4] = 0;
+        correct_result.promotions[5] = 0;
+        correct_result.promotions[6] = 7552;
+        correct_result.promotions[7] = 140024;
+
+        correct_result.checks[1] = 2;
+        correct_result.checks[2] = 10;
+        correct_result.checks[3] = 267;
+        correct_result.checks[4] = 1680;
+        correct_result.checks[5] = 52950;
+        correct_result.checks[6] = 452473;
+        correct_result.checks[7] = 12797406;
+
+        correct_result.check_mates[1] = 0;
+        correct_result.check_mates[2] = 0;
+        correct_result.check_mates[3] = 0;
+        correct_result.check_mates[4] = 17;
+        correct_result.check_mates[5] = 0;
+        correct_result.check_mates[6] = 2733;
+        correct_result.check_mates[7] = 87;
+
+        let g = Game::from_fen_str("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1").unwrap();
+        let result = perft(g, 7);
+
+        assert!(result == correct_result);
     }
 }
