@@ -120,7 +120,7 @@ impl MoveBufferData {
             }
         };
 
-        let king_moves = KING_TABLE[king_square.idx()];
+        let king_moves = unsafe { *KING_TABLE.get_unchecked(king_square.idx()) };
 
         if check_multiplicity > 1 && self.stage < MoveGenStage::MultipleCheckKing {
             // If the king is in double+ check, the only legal moves are
@@ -164,7 +164,7 @@ impl MoveBufferData {
         {
             for from in game.board.get_pieces(friendly_color, Knight) & !pinned
             {
-                let knight_moves = KNIGHT_TABLE[from.idx()];
+                let knight_moves = unsafe { *KNIGHT_TABLE.get_unchecked(from.idx()) };
 
                 if (knight_moves & empty_squares & quiet_mask).nonempty() {
                     return true;
@@ -373,7 +373,10 @@ impl MoveBufferData {
             // captures (and capture-promotions)
             for from in pawns_that_can_capture
             {
-                let mut pawn_attack_pattern = PAWN_ATTACKS[friendly_color as usize][from.idx()] & capture_mask;
+                let mut pawn_attack_pattern = unsafe {
+                    *PAWN_ATTACKS.get_unchecked(friendly_color as usize)
+                                 .get_unchecked(from.idx()) & capture_mask
+                };
 
                 if (from.bitrep() & pinned_diagonally).nonempty() {
                     pawn_attack_pattern &= self.pin_finder.diagonal_constraint(from);
