@@ -7,6 +7,7 @@ use game::*;
 use movegen::*;
 use moves::*;
 use tables::*;
+use tree::*;
 
 use std::collections::HashMap;
 use std::cell::RefCell;
@@ -23,9 +24,6 @@ use prettytable::row::Row;
 const QPERFT_PATH: &'static str = "/Users/zac/Code/qperft/qperft";
 const MAX_PERFT_DEPTH: usize = 20;
 
-/*
-
-#[derive(Clone)]
 struct PerftContext {
     tree: GameTree,
     result: PerftResult
@@ -44,7 +42,7 @@ struct PerftResult {
 
 impl PerftResult {
     fn new() -> PerftResult {
-        PerftResult {
+        let mut new_result = PerftResult {
             node_count  : [0; MAX_PERFT_DEPTH],
             captures    : [0; MAX_PERFT_DEPTH],
             ep_captures : [0; MAX_PERFT_DEPTH],
@@ -52,7 +50,11 @@ impl PerftResult {
             promotions  : [0; MAX_PERFT_DEPTH],
             checks      : [0; MAX_PERFT_DEPTH],
             check_mates : [0; MAX_PERFT_DEPTH]
-        }
+        };
+
+        new_result.node_count[0] = 1;
+
+        return new_result;
     }
 }
 
@@ -79,165 +81,93 @@ impl Add for PerftResult {
 impl PerftContext {
     fn new(perft_game: Game) -> PerftContext {
         PerftContext {
-            tree: GameTree::new(&game);
+            tree: GameTree::new(perft_game),
             result: PerftResult::new()
         }
     }
 
-    fn go(&mut self, max_depth: usize, move_subset: Option<&MoveList>) -> PerftResult
-    {
-        let move_stack = MoveStack::new();
+    fn go(&mut self, max_depth: usize) {
 
-        match move_subset {
-            Some(subset) => {
-                let mut old_buffer = move_stack.at_depth(1).borrow_mut();
-                old_buffer.clear();
-                for m in subset.iter() {
-                    old_buffer.add(*m);
-                }
-            },
-
-            None => {
-                self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(1));
-            }
-        }
-
-        self.go2(1, max_depth, &move_stack);
-
-        return self.result.clone();
-    }
-
-    fn go2(&mut self, current_depth: usize, max_depth: usize, move_stack: &MoveStack) {
-
-        match self.game.outcome(move_stack.at_depth(current_depth).borrow().len()) {
-            Some(GameResult::Win(_)) => {
-                self.result.check_mates[current_depth - 1] += 1;
-            },
-
-            Some(GameResult::Draw) => return,
-
-            None => {}
-        }
-
-        if self.game.king_attackers.population() > 0 {
-            self.result.checks[current_depth - 1] += 1;
-        }
-
-        if current_depth > max_depth {
+        if self.tree.depth == max_depth {
             return;
         }
 
-        for m in move_stack.at_depth(current_depth).borrow().iter() {
-            let game_copy = self.game.clone();
-            self.game.make_move(*m);
+        let next_moves = self.tree.next_moves();
 
-            self.result.node_count[current_depth] += 1;
+        for m in next_moves.borrow().list.iter() {
+            let game_copy = self.tree.game.clone();
+
+            self.tree.make_move(*m);
+
+            self.result.node_count[self.tree.depth] += 1;
 
             if m.flag() == EP_CAPTURE_FLAG {
-                self.result.ep_captures[current_depth] += 1;
+                self.result.ep_captures[self.tree.depth] += 1;
             }
 
             if m.is_capture() {
-                self.result.captures[current_depth] += 1;
+                self.result.captures[self.tree.depth] += 1;
             }
 
             if m.flag() == KING_CASTLE_FLAG || m.flag() == QUEEN_CASTLE_FLAG {
-                self.result.castles[current_depth] += 1;
+                self.result.castles[self.tree.depth] += 1;
             }
 
             if m.is_promotion() {
-                self.result.promotions[current_depth] += 1;
+                self.result.promotions[self.tree.depth] += 1;
             }
 
-            self.move_gen.fill_move_buffer(&self.game, move_stack.at_depth(current_depth + 1));
+            if self.tree.game.king_attackers.population() > 0 {
+                self.result.checks[self.tree.depth] += 1;
+            }
 
-            self.go2(current_depth+1, max_depth, move_stack);
+            match self.tree.game.outcome {
+                Some(GameResult::Win(_)) => self.result.check_mates[self.tree.depth] += 1,
+                _ => {}
+            }
 
-            self.game = game_copy;
+            self.go(max_depth);
+            self.tree.unmake_move(game_copy);
         }
     }
 }
 
-// pub fn perft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
-//
-//     let mut move_gen = MoveGen::new();
-//     let move_buffer = move_gen.move_list(&game);
-//
-//     let mut results = HashMap::new();
-//
-//     for m in &move_buffer {
-//         let mut game_copy = game.clone();
-//         game_copy.make_move(*m);
-//         let mut nc = NodeCountContext::new(game_copy);
-//         nc.go(1,depth-1);
-//         let mut f = m.from().to_algebraic();
-//         f.push_str(&m.to().to_algebraic());
-//
-//         results.insert(f, nc.node_count as u32);
-//     }
-//
-// //     println!(r#"
-// //   ___ _____   _____ ___  ___
-// //  |   \_ _\ \ / /_ _|   \| __|
-// //  | |) | | \ V / | || |) | _|
-// //  |___/___| \_/ |___|___/|___|
-// //         "#);
-// //
-// //
-// //     game.board.print();
-// //     println!("");
-// //     println!("DEPTH = {}", depth);
-// //     println!("");
-// //     for (sq, nc) in &results_vec {
-// //         println!("{}: {}", sq, nc);
-// //     }
-// //
-// //     println!("total: {}", total);
-//
-//     return results;
-// }
 
 pub fn perft(game: Game, depth: usize) {
-    let num_cpus = num_cpus::get() - 2;
+    // let num_cpus = num_cpus::get() - 2;
 
-    let mut move_gen = MoveGen::new();
-    let move_buffer = alloc_move_buffer();
-    move_gen.fill_move_buffer(&game, &move_buffer);
-
-    let mut move_vec = Vec::new();
-    for m in move_buffer.borrow().iter() {
-        move_vec.push(*m);
-    }
-
-    let mut threads = Vec::new();
+    // let mut threads = Vec::new();
 
     let start_time = PreciseTime::now();
 
-    // TODO: divide this up more efficiencly
-    // don't let the last thread process only 1 game, for example
-    for move_subset in move_vec.chunks(move_vec.len() / num_cpus - 1) {
-        let mut move_subset_vec = MoveList::new();
-        for m in move_subset {
-            move_subset_vec.add(m.clone());
-        }
+    // for move_subset in move_vec.chunks(move_vec.len() / num_cpus - 1) {
+    //     let mut move_subset_vec = MoveList::new();
+    //     for m in move_subset {
+    //         move_subset_vec.add(m.clone());
+    //     }
 
-        let game_clone = game.clone();
+    //     let game_clone = game.clone();
 
-        threads.push(thread::spawn(move || {
-            let mut pc = PerftContext::new(game_clone);
-            return pc.go(depth, Some(&move_subset_vec));
-        }));
-    }
+    //     threads.push(thread::spawn(move || {
+    //         let mut pc = PerftContext::new(game_clone);
+    //         return pc.go(depth, Some(&move_subset_vec));
+    //     }));
+    // }
 
-    let mut final_result = PerftResult::new();
+    // let mut final_result = PerftResult::new();
 
-    for thread in threads {
-        match thread.join() {
-            Ok(result) => final_result = final_result + result,
-            Err(_) => println!("Failed to join threads for PERFT test.")
-        }
-    }
+    // for thread in threads {
+    //     match thread.join() {
+    //         Ok(result) => final_result = final_result + result,
+    //         Err(_) => println!("Failed to join threads for PERFT test.")
+    //     }
+    // }
 
+    let mut pc = PerftContext::new(game.clone());
+    pc.go(depth);
+
+    let final_result = &pc.result;
+    
     let end_time = PreciseTime::now();
 
     let mut table = Table::new();
@@ -286,13 +216,31 @@ pub fn perft(game: Game, depth: usize) {
     game.board.print();
     table.printstd();
 
-    println!("Threads used: {}", num_cpus);
+    // println!("Threads used: {}", num_cpus);
     println!("Total Nodes Processed: {}", total_nodes);
     println!("MNodes/Sec: {:.2}", 1e-6 * total_nodes as f64 / (start_time.to(end_time).num_milliseconds() as f64 / 1000.0));
 
 }
 
-*/
+// pub fn perft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
+// 
+//     let mut move_gen = MoveGen::new();
+//     let move_buffer = move_gen.move_list(&game);
+//     let mut results = HashMap::new();
+// 
+//     for m in &move_buffer {
+//         let mut game_copy = game.clone();
+//         game_copy.make_move(*m);
+//         let mut nc = NodeCountContext::new(game_copy);
+//         nc.go(1,depth-1);
+//         let mut f = m.from().to_algebraic();
+//         f.push_str(&m.to().to_algebraic());
+// 
+//         results.insert(f, nc.node_count as u32);
+//     }
+// 
+//     return results;
+// }
 
 // pub fn qperft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
 //     let qperft_command = [

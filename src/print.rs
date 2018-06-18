@@ -7,6 +7,7 @@ use core::*;
 use bitboard::*;
 use board::*;
 use moves::*;
+use game::*;
 
 impl Piece {
     fn to_unicode(&self) -> &'static str {
@@ -64,7 +65,7 @@ impl Board {
 
         let mut row_idx = 8;
         let mut bkg_color = "black";
-        eprintln!(" a b c d e f g h");
+        eprintln!("   a b c d e f g h");
         for row in chars.chunks(8) {
             match bkg_color {
                 "blue" => bkg_color = "white",
@@ -82,11 +83,12 @@ impl Board {
             row_idx -= 1;
             eprintln!();
         }
-        eprintln!(" a b c d e f g h");
+        eprintln!("   a b c d e f g h");
     }
 }
 
 impl Move {
+    //TODO: expand to print details (capture, ep, promotion, etc)
     pub fn print(&self) {
         eprintln!("{}{}", self.from().to_algebraic(), self.to().to_algebraic());
     }

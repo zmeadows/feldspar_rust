@@ -4,14 +4,12 @@ use movegen::*;
 use moves::*;
 use tree::*;
 
-use std::thread;
+// use std::thread;
 
 fn maxi(tree: &mut GameTree, max_depth: usize, mut alpha: Score, beta: Score) -> Score {
     if tree.depth == max_depth {
         return tree.game.score;
     }
-
-    // println!("DEPTH: {}", tree.depth);
 
     let next_moves = tree.next_moves();
 
@@ -38,8 +36,6 @@ fn mini(tree: &mut GameTree, max_depth: usize, alpha: Score, mut beta: Score) ->
     if tree.depth == max_depth {
         return tree.game.score;
     }
-
-    // println!("DEPTH: {}", tree.depth);
 
     let next_moves = tree.next_moves();
 

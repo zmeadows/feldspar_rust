@@ -66,6 +66,7 @@ impl Square {
     pub fn to_algebraic(&self) -> String {
         let mut alg_str: String = String::new();
 
+        //TODO: create rank/file newtype
         let file = match self.file() {
             1 => 'a',
             2 => 'b',
@@ -90,12 +91,12 @@ impl Square {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum PieceType {
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King
+    Pawn = 1,
+    Knight = 2,
+    Bishop = 3,
+    Rook = 4,
+    Queen = 5,
+    King = 6
 }
 
 impl PieceType {
@@ -107,13 +108,26 @@ impl PieceType {
 
     pub fn is_slider(self) -> bool {
         use self::PieceType::*;
-        match self {
-            Pawn   => return false,
-            Knight => return false,
-            Bishop => return true,
-            Rook   => return true,
-            Queen  => return true,
-            King   => return false
+        return match self {
+            Pawn   => false,
+            Knight => false,
+            Bishop => true,
+            Rook   => true,
+            Queen  => true,
+            King   => false
+        }
+    }
+
+    pub fn from_bits(bits: u32) -> PieceType {
+        use self::PieceType::*;
+        match bits {
+            1 => Pawn,
+            2 => Knight,
+            3 => Bishop,
+            4 => Rook,
+            5 => Queen,
+            6 => King,
+            _ => panic!("Invalid bits passed to PieceType::from_bits!")
         }
     }
 }
@@ -138,6 +152,15 @@ pub struct Piece {
     pub color: Color,
 }
 
+impl Piece {
+    pub fn new(c: Color, p: PieceType) -> Piece {
+        Piece {
+            ptype: p,
+            color: c
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Score { pub val: i32 }
 
@@ -152,5 +175,9 @@ impl Score {
 
     pub fn min() -> Score {
         Score::new(<i32>::min_value())
+    }
+
+    pub fn flip(&self) -> Score {
+        Score::new(self.val * -1)
     }
 }

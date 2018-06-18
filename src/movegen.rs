@@ -14,12 +14,12 @@ use rand::Rng;
 pub enum MoveGenStage {
     Begin,
     MultipleCheckKing,
-    PawnQuiet,
-    PawnCapture,
     Knight,
     Bishop,
     Rook,
     Queen,
+    PawnQuiet,
+    PawnCapture,
     KingNonCastle,
     Finished
 }
@@ -57,14 +57,8 @@ impl MoveBufferData {
         self.stage = MoveGenStage::Begin;
     }
 
+    // returns true if any moves are found
     pub fn generate_moves(&mut self, game: &Game, break_on_found: bool) -> bool {
-        // returns true if any moves are found
-
-        //TODO: this check shouldn't be necessary
-        if self.stage == MoveGenStage::Begin {
-            self.list.clear();
-        }
-
         use Color::*;
         use PieceType::*;
 
@@ -79,20 +73,50 @@ impl MoveBufferData {
         let king_attackers      = game.king_attackers;
         let check_multiplicity  = king_attackers.population();
         let in_check            = check_multiplicity > 0;
-        let king_moves          = KING_TABLE[king_square.idx()];
-        //TODO: save king_danger_squares in Game
-        let king_danger_squares = game.king_danger_squares;
+
+        let opponent_pawns = game.board.get_pieces(opponent_color, Pawn);
+        let opponent_knights = game.board.get_pieces(opponent_color, Knight);
+        let opponent_bishops = game.board.get_pieces(opponent_color, Bishop);
+        let opponent_rooks = game.board.get_pieces(opponent_color, Rook);
+        let opponent_queens = game.board.get_pieces(opponent_color, Queen);
+        let opponent_kings = game.board.get_pieces(opponent_color, King);
+
+        let opp_ptype_at = move |sq: Square| -> PieceType {
+            use PieceType::*;
+
+            let sqbit = sq.bitrep();
+
+            if (sqbit & opponent_pawns).nonempty() {
+                return Pawn;
+            } else if (sqbit & opponent_knights).nonempty() {
+                return Knight;
+            } else if (sqbit & opponent_bishops).nonempty() {
+                return Bishop;
+            } else if (sqbit & opponent_rooks).nonempty() {
+                return Rook;
+            } else if (sqbit & opponent_queens).nonempty() {
+                return Queen;
+            } else if (sqbit & opponent_kings).nonempty() {
+                return King;
+            } else {
+                panic!("Attempted to determine opponent piece type at an empty square.");
+            }
+        };
+
+        let king_moves = KING_TABLE[king_square.idx()];
 
         if check_multiplicity > 1 && self.stage < MoveGenStage::MultipleCheckKing {
             // If the king is in double+ check, the only legal moves are
             // king moves, so we compute them and return early.
+            let king_danger_squares = game.board.attacked(!game.to_move, true);
 
             for to in king_moves & empty_squares & !king_danger_squares {
-                self.list.add(Move::new(king_square, to, QUIET_FLAG));
+                self.list.add(Move::new_quiet(king_square, to, QUIET_FLAG, King));
             }
 
             for to in king_moves & opponent_pieces & !king_danger_squares {
-                self.list.add(Move::new(king_square, to, CAPTURE_FLAG));
+                self.list.add(Move::new_capture(king_square, to, CAPTURE_FLAG,
+                                                King, opp_ptype_at(to)));
             }
 
             self.stage = MoveGenStage::Finished;
@@ -107,14 +131,15 @@ impl MoveBufferData {
 
             let checker_square = king_attackers.bitscan_forward();
 
-            if game.board.piece_at(checker_square).unwrap().ptype.is_slider() {
+            if opp_ptype_at(checker_square).is_slider() {
                 quiet_mask = ray_between_squares(king_square, checker_square);
             } else {
                 quiet_mask = Bitboard::new(0);
             }
         }
 
-        // finding pins is expensive, don't re-do it if resuming move generation.
+        // finding pins is expensive (or is it? profile.)
+        // don't re-do it if resuming move generation.
         if self.stage == MoveGenStage::Begin {
             self.pin_finder.update(friendly_color, &game.board);
         }
@@ -122,6 +147,221 @@ impl MoveBufferData {
         let pinned_diagonally = self.pin_finder.pinned_diagonally();
         let pinned_nondiagonally = self.pin_finder.pinned_nondiagonally();
         let pinned = self.pin_finder.pinned();
+
+        /***********/
+        /* KNIGHTS */
+        /***********/
+        if self.stage < MoveGenStage::Knight {
+            for from in game.board.get_pieces(friendly_color, Knight) & !pinned
+            {
+                let knight_moves = KNIGHT_TABLE[from.idx()];
+
+                for to in knight_moves & empty_squares & quiet_mask {
+                    self.list.add(
+                        Move::new_quiet(from, to, QUIET_FLAG, Knight)
+                    );
+                }
+
+                for to in knight_moves & opponent_pieces & capture_mask {
+                    self.list.add(
+                        Move::new_capture(from, to, CAPTURE_FLAG,
+                                          Knight, opp_ptype_at(to))
+                    );
+                }
+            }
+
+            self.stage = MoveGenStage::Knight;
+            if break_on_found && self.list.len() > 0 {
+                return true;
+            }
+        } // end knights
+
+        /***********/
+        /* BISHOPS */
+        /***********/
+
+        let friendly_bishops = game.board.get_pieces(friendly_color, Bishop);
+
+        if !friendly_bishops.empty() && self.stage < MoveGenStage::Bishop {
+
+            // UNPINNED
+            for from in friendly_bishops & !pinned
+            {
+                let bishop_moves = get_bishop_rays(from, occupied_squares);
+
+                for to in bishop_moves & empty_squares & quiet_mask {
+                    self.list.add(
+                        Move::new_quiet(from, to, QUIET_FLAG, Bishop)
+                    );
+                }
+
+                for to in bishop_moves & opponent_pieces & capture_mask {
+                    self.list.add(
+                        Move::new_capture(from, to, CAPTURE_FLAG,
+                                          Bishop, opp_ptype_at(to))
+                    );
+                }
+            }
+
+            // PINNED
+            for from in friendly_bishops & pinned_diagonally
+            {
+                let bishop_moves = get_bishop_rays(from, occupied_squares)
+                    & self.pin_finder.diagonal_constraint(from);
+
+                for to in bishop_moves & empty_squares & quiet_mask {
+                    self.list.add(
+                        Move::new_quiet(from, to, QUIET_FLAG, Bishop)
+                    );
+                }
+
+                for to in bishop_moves & opponent_pieces & capture_mask {
+                    self.list.add(
+                        Move::new_capture(from, to, CAPTURE_FLAG,
+                                          Bishop, opp_ptype_at(to))
+                    );
+                }
+            }
+
+            self.stage = MoveGenStage::Bishop;
+            if break_on_found && self.list.len() > 0 {
+                return true;
+            }
+        } // end bishops
+
+        /*********/
+        /* ROOKS */
+        /*********/
+
+        if self.stage < MoveGenStage::Rook {
+            let friendly_rooks = game.board.get_pieces(friendly_color, Rook);
+
+            // unpinned
+            for from in friendly_rooks & !pinned
+            {
+                let rook_moves = get_rook_rays(from, occupied_squares);
+
+                /* quiets */
+                for to in rook_moves & empty_squares & quiet_mask {
+                    self.list.add(
+                        Move::new_quiet(from, to, QUIET_FLAG, Rook)
+                    );
+                }
+
+                /* captures */
+                for to in rook_moves & opponent_pieces & capture_mask {
+                    self.list.add(
+                        Move::new_capture(from, to, CAPTURE_FLAG,
+                                          Rook, opp_ptype_at(to))
+                    );
+                }
+            }
+
+            // pinned
+            for from in friendly_rooks & pinned_nondiagonally
+            {
+                let rook_moves = get_rook_rays(from, occupied_squares)
+                                 & self.pin_finder.nondiagonal_constraint(from);
+
+                /* quiets */
+                for to in rook_moves & empty_squares & quiet_mask {
+                    self.list.add(
+                        Move::new_quiet(from, to, QUIET_FLAG, Rook)
+                    );
+                }
+
+                /* captures */
+                for to in rook_moves & opponent_pieces & capture_mask {
+                    self.list.add(
+                        Move::new_capture(from, to, CAPTURE_FLAG,
+                                          Rook, opp_ptype_at(to))
+                    );
+                }
+            }
+
+            self.stage = MoveGenStage::Rook;
+            if break_on_found && self.list.len() > 0 {
+                return true;
+            }
+        } // end rooks
+
+        /*********/
+        /* QUEEN */
+        /*********/
+
+        if self.stage < MoveGenStage::Queen {
+            let friendly_queens = game.board.get_pieces(friendly_color, Queen);
+            //OPTIMIZE: early exit if friendly_X is empty?
+
+            for from in friendly_queens & !pinned
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares);
+
+                /* quiets */
+                for to in queen_moves & empty_squares & quiet_mask {
+                    self.list.add(
+                        Move::new_quiet(from, to, QUIET_FLAG, Queen)
+                    );
+                }
+
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    self.list.add(
+                        Move::new_capture(from, to, CAPTURE_FLAG,
+                                          Queen, opp_ptype_at(to))
+                    );
+                }
+            }
+
+            let movable_pinned_queens = friendly_queens & pinned & !(pinned_diagonally & pinned_nondiagonally);
+
+            for from in movable_pinned_queens & pinned_diagonally
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares)
+                                  & self.pin_finder.diagonal_constraint(from);
+
+                /* quiets */
+                for to in queen_moves & empty_squares & quiet_mask {
+                    self.list.add(
+                        Move::new_quiet(from, to, QUIET_FLAG, Queen)
+                    );
+                }
+
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    self.list.add(
+                        Move::new_capture(from, to, CAPTURE_FLAG,
+                                          Queen, opp_ptype_at(to))
+                    );
+                }
+            }
+
+            for from in movable_pinned_queens & pinned_nondiagonally
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares)
+                                  & self.pin_finder.nondiagonal_constraint(from);
+
+                /* quiets */
+                for to in queen_moves & empty_squares & quiet_mask {
+                    self.list.add(
+                        Move::new_quiet(from, to, QUIET_FLAG, Queen)
+                    );
+                }
+
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    self.list.add(
+                        Move::new_capture(from, to, CAPTURE_FLAG,
+                                          Queen, opp_ptype_at(to))
+                    );
+                }
+            }
+
+            self.stage = MoveGenStage::Queen;
+            if break_on_found && self.list.len() > 0 {
+                return true;
+            }
+        } // end queens
 
         let friendly_pawns = game.board.get_pieces(friendly_color, Pawn);
         let delta_pawn_single_push: i32 = if game.to_move == White { -8 } else { 8 };
@@ -134,6 +374,7 @@ impl MoveBufferData {
         /*********/
 
         if self.stage < MoveGenStage::PawnQuiet {
+
             let advanceable_pawns = friendly_pawns & !pinned_diagonally;
 
             let advanced_pawns =
@@ -155,12 +396,12 @@ impl MoveBufferData {
                     }
 
                 if to.rank() == promotion_rank {
-                    self.list.add(Move::new(from, to, BISHOP_PROMO_FLAG));
-                    self.list.add(Move::new(from, to, KNIGHT_PROMO_FLAG));
-                    self.list.add(Move::new(from, to, ROOK_PROMO_FLAG));
-                    self.list.add(Move::new(from, to, QUEEN_PROMO_FLAG));
+                    self.list.add(Move::new_quiet(from, to, KNIGHT_PROMO_FLAG, Pawn));
+                    self.list.add(Move::new_quiet(from, to, BISHOP_PROMO_FLAG, Pawn));
+                    self.list.add(Move::new_quiet(from, to, ROOK_PROMO_FLAG, Pawn));
+                    self.list.add(Move::new_quiet(from, to, QUEEN_PROMO_FLAG, Pawn));
                 } else {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
+                    self.list.add(Move::new_quiet(from, to, QUIET_FLAG, Pawn));
                 }
             }
 
@@ -180,8 +421,9 @@ impl MoveBufferData {
                         continue;
                     }
 
-                self.list.add(Move::new(from, to, DOUBLE_PAWN_PUSH_FLAG));
+                self.list.add(Move::new_quiet(from, to, DOUBLE_PAWN_PUSH_FLAG, Pawn));
             }
+
 
             self.stage = MoveGenStage::PawnQuiet;
             if break_on_found && self.list.len() > 0 {
@@ -206,12 +448,12 @@ impl MoveBufferData {
                 for to in pawn_attack_pattern & opponent_pieces
                 {
                     if to.rank() == promotion_rank {
-                        self.list.add(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
-                        self.list.add(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
-                        self.list.add(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
-                        self.list.add(Move::new(from, to, QUEEN_PROMO_CAPTURE_FLAG));
+                        self.list.add(Move::new_capture(from, to, KNIGHT_PROMO_CAPTURE_FLAG, Pawn, opp_ptype_at(to)));
+                        self.list.add(Move::new_capture(from, to, BISHOP_PROMO_FLAG, Pawn, opp_ptype_at(to)));
+                        self.list.add(Move::new_capture(from, to, ROOK_PROMO_CAPTURE_FLAG, Pawn, opp_ptype_at(to)));
+                        self.list.add(Move::new_capture(from, to, QUEEN_PROMO_CAPTURE_FLAG, Pawn, opp_ptype_at(to)));
                     } else {
-                        self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                        self.list.add(Move::new_capture(from, to, CAPTURE_FLAG, Pawn, opp_ptype_at(to)));
                     }
                 }
 
@@ -237,12 +479,14 @@ impl MoveBufferData {
 
                                 let attackers = board_copy.attackers(king_square, opponent_color);
                                 if attackers.empty() {
-                                    self.list.add(Move::new(from, ep_capture_square, EP_CAPTURE_FLAG));
+                                    self.list.add(Move::new_capture(from, ep_capture_square, EP_CAPTURE_FLAG,
+                                                                    Pawn, opp_ptype_at(captured_sq)));
                                 }
                             }
                     }
                 }
             }
+
 
             self.stage = MoveGenStage::PawnCapture;
             if break_on_found && self.list.len() > 0 {
@@ -250,194 +494,28 @@ impl MoveBufferData {
             }
         }
 
-        /***********/
-        /* KNIGHTS */
-        /***********/
-        if self.stage < MoveGenStage::Knight {
-            for from in game.board.get_pieces(friendly_color, Knight) & !pinned
-            {
-                let knight_moves = KNIGHT_TABLE[from.idx()];
-
-                for to in knight_moves & empty_squares & quiet_mask {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
-                }
-
-
-                for to in knight_moves & opponent_pieces & capture_mask {
-                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
-                }
-
-            }
-
-            self.stage = MoveGenStage::Knight;
-            if break_on_found && self.list.len() > 0 {
-                return true;
-            }
-        }
-
-        /***********/
-        /* BISHOPS */
-        /***********/
-
-        if self.stage < MoveGenStage::Bishop {
-            let friendly_bishops = game.board.get_pieces(friendly_color, Bishop);
-
-            // UNPINNED
-            for from in friendly_bishops & !pinned
-            {
-                let bishop_moves = get_bishop_rays(from, occupied_squares);
-
-                for to in bishop_moves & empty_squares & quiet_mask {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
-                }
-
-                for to in bishop_moves & opponent_pieces & capture_mask {
-                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
-                }
-            }
-
-            // PINNED
-            for from in friendly_bishops & pinned_diagonally
-            {
-                let bishop_moves = get_bishop_rays(from, occupied_squares)
-                    & self.pin_finder.diagonal_constraint(from);
-
-                for to in bishop_moves & empty_squares & quiet_mask {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
-                }
-
-                for to in bishop_moves & opponent_pieces & capture_mask {
-                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
-                }
-            }
-
-            self.stage = MoveGenStage::Bishop;
-            if break_on_found && self.list.len() > 0 {
-                return true;
-            }
-        }
-
-        /*********/
-        /* ROOKS */
-        /*********/
-
-        if self.stage < MoveGenStage::Rook {
-            let friendly_rooks = game.board.get_pieces(friendly_color, Rook);
-
-            // unpinned
-            for from in friendly_rooks & !pinned
-            {
-                let rook_moves = get_rook_rays(from, occupied_squares);
-
-                /* quiets */
-                for to in rook_moves & empty_squares & quiet_mask {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
-                }
-
-                /* captures */
-                for to in rook_moves & opponent_pieces & capture_mask {
-                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
-                }
-            }
-
-            // pinned
-            for from in friendly_rooks & pinned_nondiagonally
-            {
-                let rook_moves = get_rook_rays(from, occupied_squares)
-                                 & self.pin_finder.nondiagonal_constraint(from);
-
-                /* quiets */
-                for to in rook_moves & empty_squares & quiet_mask {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
-                }
-
-                /* captures */
-                for to in rook_moves & opponent_pieces & capture_mask {
-                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
-                }
-            }
-
-            self.stage = MoveGenStage::Rook;
-            if break_on_found && self.list.len() > 0 {
-                return true;
-            }
-        }
-
-        /*********/
-        /* QUEEN */
-        /*********/
-        if self.stage < MoveGenStage::Queen {
-            //OPTIMIZE: early exit if friendly_X is empty?
-            let friendly_queens = game.board.get_pieces(friendly_color, Queen);
-
-            for from in friendly_queens & !pinned
-            {
-                let queen_moves = get_queen_rays(from, occupied_squares);
-
-                /* quiets */
-                for to in queen_moves & empty_squares & quiet_mask {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
-                }
-
-                /* captures */
-                for to in queen_moves & opponent_pieces & capture_mask {
-                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
-                }
-            }
-
-            let movable_pinned_queens = friendly_queens & pinned & !(pinned_diagonally & pinned_nondiagonally);
-
-            for from in movable_pinned_queens & pinned_diagonally
-            {
-                let queen_moves = get_queen_rays(from, occupied_squares)
-                                  & self.pin_finder.diagonal_constraint(from);
-
-                /* quiets */
-                for to in queen_moves & empty_squares & quiet_mask {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
-                }
-
-                /* captures */
-                for to in queen_moves & opponent_pieces & capture_mask {
-                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
-                }
-            }
-
-            for from in movable_pinned_queens & pinned_nondiagonally
-            {
-                let queen_moves = get_queen_rays(from, occupied_squares)
-                                  & self.pin_finder.nondiagonal_constraint(from);
-
-                /* quiets */
-                for to in queen_moves & empty_squares & quiet_mask {
-                    self.list.add(Move::new(from, to, QUIET_FLAG));
-                }
-
-                /* captures */
-                for to in queen_moves & opponent_pieces & capture_mask {
-                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
-                }
-            }
-
-            self.stage = MoveGenStage::Queen;
-            if break_on_found && self.list.len() > 0 {
-                return true;
-            }
-        }
 
         /********/
         /* KING */
         /********/
 
+        let king_danger_squares = game.board.attacked(!game.to_move, true);
+
         if self.stage < MoveGenStage::KingNonCastle {
+
             /* quiets */
             for to in king_moves & empty_squares & !king_danger_squares {
-                self.list.add(Move::new(king_square, to, QUIET_FLAG));
+                self.list.add(
+                    Move::new_quiet(king_square, to, QUIET_FLAG, King)
+                );
             }
 
             /* captures */
             for to in king_moves & opponent_pieces & !king_danger_squares {
-                self.list.add(Move::new(king_square, to, CAPTURE_FLAG));
+                self.list.add(
+                    Move::new_capture(king_square, to, CAPTURE_FLAG,
+                                      King, opp_ptype_at(to))
+                );
             }
 
             self.stage = MoveGenStage::KingNonCastle;
@@ -475,8 +553,8 @@ impl MoveBufferData {
 
                     if castle_path_is_safe {
                         match friendly_color {
-                            White => self.list.add(Move::new(king_square, Square::new(1), KING_CASTLE_FLAG)),
-                            Black => self.list.add(Move::new(king_square, Square::new(57), KING_CASTLE_FLAG))
+                            White => self.list.add(Move::new_quiet(king_square, Square::new(1), KING_CASTLE_FLAG, King)),
+                            Black => self.list.add(Move::new_quiet(king_square, Square::new(57), KING_CASTLE_FLAG, King)),
                         }
                     }
                 }
@@ -504,8 +582,8 @@ impl MoveBufferData {
 
                     if castle_path_is_safe {
                         match friendly_color {
-                            White => self.list.add(Move::new(king_square, Square::new(5), QUEEN_CASTLE_FLAG)),
-                            Black => self.list.add(Move::new(king_square, Square::new(61), QUEEN_CASTLE_FLAG))
+                            White => self.list.add(Move::new_quiet(king_square, Square::new(5), QUEEN_CASTLE_FLAG, King)),
+                            Black => self.list.add(Move::new_quiet(king_square, Square::new(61), QUEEN_CASTLE_FLAG, King)),
                         }
                     }
                 }
@@ -516,6 +594,245 @@ impl MoveBufferData {
 
         return self.list.len() > 0;
     }
+
+    /*
+    pub fn generate_captures(&mut self, game: &Game) {
+        use Color::*;
+        use PieceType::*;
+
+        // OPTIMIZE: check if any of these can be moved below
+        let friendly_color      = game.to_move;
+        let opponent_color      = !friendly_color;
+        let empty_squares       = game.board.unoccupied();
+        let occupied_squares    = game.board.occupied();
+        let friendly_pieces     = game.board.occupied_by(friendly_color);
+        let opponent_pieces     = game.board.occupied_by(!friendly_color);
+        let king_square         = game.board.get_king_square(friendly_color);
+        let king_attackers      = game.king_attackers;
+        let check_multiplicity  = king_attackers.population();
+        let in_check            = check_multiplicity > 0;
+        let king_moves          = KING_TABLE[king_square.idx()];
+
+        if check_multiplicity > 1 {
+            let king_danger_squares = game.board.attacked(!game.to_move, true);
+            for to in king_moves & opponent_pieces & !king_danger_squares {
+                self.list.add(Move::new(king_square, to, CAPTURE_FLAG));
+            }
+            self.stage = MoveGenStage::Finished;
+            return;
+        }
+
+        let mut capture_mask = Bitboard::new(u64::max_value());
+        let mut quiet_mask = Bitboard::new(u64::max_value());
+
+        if check_multiplicity == 1 {
+            capture_mask = king_attackers;
+
+            let checker_square = king_attackers.bitscan_forward();
+
+            if game.piece_squares[checker_square.idx()].unwrap().ptype.is_slider() {
+                quiet_mask = ray_between_squares(king_square, checker_square);
+            } else {
+                quiet_mask = Bitboard::new(0);
+            }
+        }
+
+        // finding pins is expensive, don't re-do it if resuming move generation.
+        if self.stage == MoveGenStage::Begin {
+            self.pin_finder.update(friendly_color, &game.board);
+        }
+
+        let pinned_diagonally = self.pin_finder.pinned_diagonally();
+        let pinned_nondiagonally = self.pin_finder.pinned_nondiagonally();
+        let pinned = self.pin_finder.pinned();
+
+        /***********/
+        /* KNIGHTS */
+        /***********/
+        if self.stage < MoveGenStage::Knight {
+            for from in game.board.get_pieces(friendly_color, Knight) & !pinned
+            {
+                let knight_moves = KNIGHT_TABLE[from.idx()];
+
+                for to in knight_moves & opponent_pieces & capture_mask {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+        }
+
+        /***********/
+        /* BISHOPS */
+        /***********/
+
+        let friendly_bishops = game.board.get_pieces(friendly_color, Bishop);
+
+        if !friendly_bishops.empty() {
+            // UNPINNED
+            for from in friendly_bishops & !pinned
+            {
+                let bishop_moves = get_bishop_rays(from, occupied_squares);
+
+                for to in bishop_moves & opponent_pieces & capture_mask {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+
+            // PINNED
+            for from in friendly_bishops & pinned_diagonally
+            {
+                let bishop_moves = get_bishop_rays(from, occupied_squares)
+                    & self.pin_finder.diagonal_constraint(from);
+
+                for to in bishop_moves & opponent_pieces & capture_mask {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+        }
+
+        /*********/
+        /* ROOKS */
+        /*********/
+
+        let friendly_rooks = game.board.get_pieces(friendly_color, Rook);
+        if !friendly_rooks.empty() {
+
+            // unpinned
+            for from in friendly_rooks & !pinned
+            {
+                let rook_moves = get_rook_rays(from, occupied_squares);
+
+                /* captures */
+                for to in rook_moves & opponent_pieces & capture_mask {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+
+            // pinned
+            for from in friendly_rooks & pinned_nondiagonally
+            {
+                let rook_moves = get_rook_rays(from, occupied_squares)
+                                 & self.pin_finder.nondiagonal_constraint(from);
+
+                /* captures */
+                for to in rook_moves & opponent_pieces & capture_mask {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+        }
+
+        /*********/
+        /* QUEEN */
+        /*********/
+        let friendly_queens = game.board.get_pieces(friendly_color, Queen);
+        if !friendly_queens.empty() {
+            for from in friendly_queens & !pinned
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares);
+
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+
+            let movable_pinned_queens = friendly_queens & pinned & !(pinned_diagonally & pinned_nondiagonally);
+
+            for from in movable_pinned_queens & pinned_diagonally
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares)
+                                  & self.pin_finder.diagonal_constraint(from);
+
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+
+            for from in movable_pinned_queens & pinned_nondiagonally
+            {
+                let queen_moves = get_queen_rays(from, occupied_squares)
+                                  & self.pin_finder.nondiagonal_constraint(from);
+
+                /* captures */
+                for to in queen_moves & opponent_pieces & capture_mask {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+        }
+
+
+        let friendly_pawns = game.board.get_pieces(friendly_color, Pawn);
+        let promotion_rank = if game.to_move == White { 8 } else { 1 };
+
+        /*********/
+        /* PAWNS */
+        /*********/
+
+        let pawns_that_can_capture = friendly_pawns & !pinned_nondiagonally;
+
+        // captures (and capture-promotions)
+        for from in pawns_that_can_capture
+        {
+            let mut pawn_attack_pattern = PAWN_ATTACKS[friendly_color as usize][from.idx()] & capture_mask;
+
+            if (from.bitrep() & pinned_diagonally).nonempty() {
+                pawn_attack_pattern &= self.pin_finder.diagonal_constraint(from);
+            }
+
+            for to in pawn_attack_pattern & opponent_pieces
+            {
+                if to.rank() == promotion_rank {
+                    self.list.add(Move::new(from, to, BISHOP_PROMO_CAPTURE_FLAG));
+                    self.list.add(Move::new(from, to, KNIGHT_PROMO_CAPTURE_FLAG));
+                    self.list.add(Move::new(from, to, ROOK_PROMO_CAPTURE_FLAG));
+                    self.list.add(Move::new(from, to, QUEEN_PROMO_CAPTURE_FLAG));
+                } else {
+                    self.list.add(Move::new(from, to, CAPTURE_FLAG));
+                }
+            }
+
+            match game.ep_square {
+                None => {}
+                Some(ep_capture_square) => {
+                    let captured_sq = match opponent_color {
+                        White => Square::new(ep_capture_square.unwrap() + 8),
+                              Black => Square::new(ep_capture_square.unwrap() - 8)
+                    };
+
+                    //CLEANUP
+                    if (captured_sq.bitrep() & capture_mask).nonempty()
+                        && (PAWN_ATTACKS[friendly_color as usize][from.idx()] & ep_capture_square.bitrep()).nonempty()
+                        {
+                            let mut board_copy = game.board.clone();
+
+                            *board_copy.get_pieces_mut(opponent_color, Pawn) &= !captured_sq.bitrep();
+                            *board_copy.get_pieces_mut(friendly_color, Pawn) ^= from.bitrep() | ep_capture_square.bitrep();
+                            *board_copy.occupied_by_mut(opponent_color) &= !captured_sq.bitrep();
+                            *board_copy.occupied_by_mut(friendly_color) ^= from.bitrep() | ep_capture_square.bitrep();
+
+                            let attackers = board_copy.attackers(king_square, opponent_color);
+                            if attackers.empty() {
+                                self.list.add(Move::new(from, ep_capture_square, EP_CAPTURE_FLAG));
+                            }
+                        }
+                }
+            }
+        }
+
+
+        /********/
+        /* KING */
+        /********/
+        let king_danger_squares = game.board.attacked(!game.to_move, true);
+        if self.stage < MoveGenStage::KingNonCastle {
+            for to in king_moves & opponent_pieces & !king_danger_squares {
+                self.list.add(Move::new(king_square, to, CAPTURE_FLAG));
+            }
+        }
+
+        self.stage = MoveGenStage::Finished;
+    }
+    */
 }
 
 //NOTE: highly inefficient, but this will rarely be used.

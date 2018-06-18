@@ -26,7 +26,7 @@ impl UCIEngine for Feldspar {
     fn find_best_move(&mut self) {
         self.tree.trim();
 
-        let (best_move, _) = alpha_beta(&mut self.tree, 5);
+        let (best_move, _) = alpha_beta(&mut self.tree, 9);
 
         println!( "bestmove {}{}"
                 , best_move.from().to_algebraic()

@@ -8,13 +8,16 @@ pub fn play_against_ai() {
 
     loop {
         tree.game.board.print();
-        println!("{}", tree.game.to_fen());
+        println!("FEN: {}", tree.game.to_fen());
         println!("score: {}", tree.game.score.val);
-        use std::io::{stdin,stdout,Write};
-        let mut s=String::new();
+        println!("");
         print!("Enter your move: ");
+
+        use std::io::{stdin,stdout,Write};
         let _=stdout().flush();
+        let mut s=String::new();
         stdin().read_line(&mut s).expect("Did not enter a correct string");
+
         if let Some('\n')=s.chars().next_back() {
             s.pop();
         }
@@ -29,7 +32,7 @@ pub fn play_against_ai() {
                 let (ai_move, _) = alpha_beta(&mut tree,6);
                 tree.make_move(ai_move);
             },
-            None => println!("Invalid move!")
+            None => println!("Invalid move! Try again...")
         }
     }
 

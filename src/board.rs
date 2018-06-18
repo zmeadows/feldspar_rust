@@ -35,12 +35,12 @@ impl Board {
     }
 
     pub fn get_pieces(&self, color: Color, ptype: PieceType) -> Bitboard {
-        let idx = 2 * ptype as usize + color as usize;
+        let idx = 2 * (ptype as usize - 1) + color as usize;
         return self.pieces[idx];
     }
 
     pub fn get_pieces_mut(&mut self, color: Color, ptype: PieceType) -> &mut Bitboard {
-        let idx = 2 * ptype as usize + color as usize;
+        let idx = 2 * (ptype as usize - 1) + color as usize;
         return &mut self.pieces[idx];
     }
 
@@ -79,11 +79,11 @@ impl Board {
     }
 
     pub fn piece_at(&self, sq: Square) -> Option<Piece> {
+        let bit = sq.bitrep();
 
         match self.color_at(sq) {
             None => return None,
             Some(col) => {
-                let bit = sq.bitrep();
                 for pt in PieceType::all() {
                     if (bit & self.get_pieces(col, *pt)).nonempty() {
                         return Some(Piece { ptype: *pt, color: col });
@@ -92,15 +92,12 @@ impl Board {
             }
         }
 
-        //TODO: log warning
         return None;
     }
 
+
     pub fn get_king_square(&self, color: Color) -> Square {
         let k = self.get_pieces(color, PieceType::King);
-        if k.empty() {
-            self.print();
-        }
         self.get_pieces(color, PieceType::King).bitscan_forward()
     }
 

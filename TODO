@@ -1,2 +1,12 @@
-detect stalemate and checkmate at end of make_move function and modify score accordingly
+remove traces of piece_squares and encode piece types in move data
+
+save best line in GameTree
+
+
+don't test for promotion during every pawn move check, do separate for loop
+
+after quiscence search, make search parallel again
+
 clean up make_move
+
+eventually: disable array bounds check everywhere that is well-tested

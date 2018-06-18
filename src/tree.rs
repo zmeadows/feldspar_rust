@@ -30,7 +30,7 @@ impl GameTree {
         GameTree {
             game: new_game,
             depth: 0,
-            move_stack: new_move_stack,
+            move_stack: new_move_stack
         }
     }
 
@@ -60,17 +60,25 @@ impl GameTree {
 
         // no moves available, game is over
         if !can_move {
-            assert!(buf.stage == MoveGenStage::Finished);
+            // assert!(buf.stage == MoveGenStage::Finished);
             let check_multiplicity = self.game.king_attackers.population();
             if check_multiplicity > 0 {
                 // check mate
                 match self.game.to_move {
-                    Color::White => self.game.score = Score::min(),
-                    Color::Black => self.game.score = Score::max()
+                    Color::White => {
+                        self.game.score = Score::min();
+                        self.game.outcome = Some(GameResult::Win(Color::Black));
+                    },
+
+                    Color::Black => {
+                        self.game.score = Score::max();
+                        self.game.outcome = Some(GameResult::Win(Color::White));
+                    }
                 }
             } else {
                 // stale mate
                 self.game.score = Score::new(0);
+                self.game.outcome = Some(GameResult::Draw);
             }
         }
     }
