@@ -520,7 +520,7 @@ mod test {
     use game::*;
 
     #[test]
-    fn test_fen() {
+    fn fen() {
         let fen_strings: Vec<&'static str> = vec![
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
             "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",

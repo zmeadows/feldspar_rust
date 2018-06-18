@@ -29,8 +29,8 @@ struct PerftContext {
     result: PerftResult
 }
 
-#[derive(Clone)]
-struct PerftResult {
+#[derive(PartialEq, Clone)]
+pub struct PerftResult {
     pub node_count  : [usize; MAX_PERFT_DEPTH],
     pub captures    : [usize; MAX_PERFT_DEPTH],
     pub ep_captures : [usize; MAX_PERFT_DEPTH],
@@ -133,7 +133,7 @@ impl PerftContext {
 }
 
 
-pub fn perft(game: Game, depth: usize) {
+pub fn perft(game: Game, depth: usize) -> PerftResult {
     // let num_cpus = num_cpus::get() - 2;
 
     // let mut threads = Vec::new();
@@ -220,6 +220,7 @@ pub fn perft(game: Game, depth: usize) {
     println!("Total Nodes Processed: {}", total_nodes);
     println!("MNodes/Sec: {:.2}", 1e-6 * total_nodes as f64 / (start_time.to(end_time).num_milliseconds() as f64 / 1000.0));
 
+    return final_result.clone();
 }
 
 // pub fn perft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
@@ -341,3 +342,76 @@ pub fn perft(game: Game, depth: usize) {
 //         }
 //     }
 // }
+
+#[cfg(test)]
+mod test {
+    use perft::*;
+
+    #[test]
+    fn standard_position() {
+        let mut correct_result = PerftResult::new();
+
+        correct_result.node_count[1] = 20;
+        correct_result.node_count[2] = 400;
+        correct_result.node_count[3] = 8902;
+        correct_result.node_count[4] = 197281;
+        correct_result.node_count[5] = 4865609;
+        correct_result.node_count[6] = 119060324;
+
+        correct_result.captures[1] = 0;
+        correct_result.captures[2] = 0;
+        correct_result.captures[3] = 34;
+        correct_result.captures[4] = 1576;
+        correct_result.captures[5] = 82719;
+        correct_result.captures[6] = 2812008;
+
+        correct_result.ep_captures[1] = 0;
+        correct_result.ep_captures[2] = 0;
+        correct_result.ep_captures[3] = 0;
+        correct_result.ep_captures[4] = 0;
+        correct_result.ep_captures[5] = 258;
+        correct_result.ep_captures[6] = 5248;
+
+        correct_result.castles[1] = 0;
+        correct_result.castles[2] = 0;
+        correct_result.castles[3] = 0;
+        correct_result.castles[4] = 0;
+        correct_result.castles[5] = 0;
+        correct_result.castles[6] = 0;
+
+        correct_result.promotions[1] = 0;
+        correct_result.promotions[2] = 0;
+        correct_result.promotions[3] = 0;
+        correct_result.promotions[4] = 0;
+        correct_result.promotions[5] = 0;
+        correct_result.promotions[6] = 0;
+
+        correct_result.checks[1] = 0;
+        correct_result.checks[2] = 0;
+        correct_result.checks[3] = 12;
+        correct_result.checks[4] = 469;
+        correct_result.checks[5] = 27351;
+        correct_result.checks[6] = 809099;
+
+        correct_result.check_mates[1] = 0;
+        correct_result.check_mates[2] = 0;
+        correct_result.check_mates[3] = 0;
+        correct_result.check_mates[4] = 8;
+        correct_result.check_mates[5] = 347;
+        correct_result.check_mates[6] = 10828;
+
+        let g = Game::starting_position();
+        let result = perft(g, 6);
+
+        for i in 0 .. 7 {
+            assert!(result.node_count[i]  == correct_result.node_count[i]  , "{} {}", result.node_count[i], correct_result.node_count[i]);
+            assert!(result.captures[i]    == correct_result.captures[i]    , "{} {}", result.captures[i], correct_result.captures[i]);
+            assert!(result.ep_captures[i] == correct_result.ep_captures[i] , "{} {}", result.ep_captures[i], correct_result.ep_captures[i]);
+            assert!(result.castles[i]     == correct_result.castles[i]     , "{} {}", result.castles[i], correct_result.castles[i]);
+            assert!(result.promotions[i]  == correct_result.promotions[i]  , "{} {}", result.promotions[i], correct_result.promotions[i]);
+            assert!(result.checks[i]      == correct_result.checks[i]      , "{} {}", result.checks[i], correct_result.checks[i]);
+            assert!(result.check_mates[i] == correct_result.check_mates[i] , "{} {}", result.check_mates[i], correct_result.check_mates[i]);
+        }
+
+    }
+}

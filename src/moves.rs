@@ -39,6 +39,24 @@ impl Move {
         );
     }
 
+    pub fn new_capture( from: Square
+                      , to: Square
+                      , flag: u32
+                      , moved_piece: PieceType
+                      , captured_piece: PieceType
+                      ) -> Move
+    {
+        return Move(
+              ((captured_piece as u32 & 0x7) << 19)
+            | ((moved_piece as u32 & 0x7) << 16)
+            | ((flag & 0xf) << 12)
+            | ((from.unwrap() & 0x3f) << 6)
+            | (to.unwrap() & 0x3f)
+        );
+    }
+
+
+    #[allow(dead_code)]
     pub fn new_capture_detailed( from: Square
                       , to: Square
                       , flag: u32
@@ -60,22 +78,6 @@ impl Move {
         println!("");
 
         Move( a | b | c | d | e )
-    }
-
-    pub fn new_capture( from: Square
-                      , to: Square
-                      , flag: u32
-                      , moved_piece: PieceType
-                      , captured_piece: PieceType
-                      ) -> Move
-    {
-        return Move(
-              ((captured_piece as u32 & 0x7) << 19)
-            | ((moved_piece as u32 & 0x7) << 16)
-            | ((flag & 0xf) << 12)
-            | ((from.unwrap() & 0x3f) << 6)
-            | (to.unwrap() & 0x3f)
-        );
     }
 
     pub fn to(&self) -> Square {
@@ -109,7 +111,6 @@ impl Move {
         }
     }
 
-    #[allow(dead_code)]
     pub fn unwrap(&self) -> u32 {
         self.0
     }
@@ -158,22 +159,27 @@ mod test {
 
     #[test]
     fn bit_conversion() {
-        // these are legal/sensible moves, just testing the bit wrap/unwrap/structure
-
-        for _ in 0 .. 50000 {
+        // these are not legal/sensible moves, just testing bitwise wrap/unwrap consistency
+        for _ in 0 .. 100000 {
             let from = random_square();
             let to = random_square();
             let flag = random_flag();
             let move_ptype = random_ptype();
             let captured_ptype = random_ptype();
 
-            let m = Move::new_capture(from, to, flag, move_ptype, captured_ptype);
+            let qm = Move::new_quiet(from, to, flag, move_ptype);
+            let cm = Move::new_capture(from, to, flag, move_ptype, captured_ptype);
 
-            assert!(m.from() == from);
-            assert!(m.to() == to);
-            assert!(m.flag() == flag);
-            assert!(m.moved_piece() == move_ptype, "moved piece type: {:?} {:?}", m.moved_piece(), move_ptype);
-            assert!(m.captured_piece().unwrap() == captured_ptype);
+            assert!(qm.from() == from);
+            assert!(qm.to() == to);
+            assert!(qm.flag() == flag);
+            assert!(qm.moved_piece() == move_ptype);
+
+            assert!(cm.from() == from);
+            assert!(cm.to() == to);
+            assert!(cm.flag() == flag);
+            assert!(cm.moved_piece() == move_ptype);
+            assert!(cm.captured_piece().unwrap() == captured_ptype);
         }
     }
 }
