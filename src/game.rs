@@ -320,6 +320,11 @@ impl Game {
             self.score.remove_piece(Piece::new(opponent_color, captured_ptype.unwrap()), captured_square);
         }
 
+        if is_capture != captured_ptype.is_some() {
+            self.board.print();
+            m.print();
+            println!("{:?} {} {}", captured_ptype, is_capture, m.flag());
+        }
         assert!(is_capture == captured_ptype.is_some());
 
         match moved_ptype {

@@ -403,15 +403,59 @@ mod test {
         let g = Game::starting_position();
         let result = perft(g, 6);
 
-        for i in 0 .. 7 {
-            assert!(result.node_count[i]  == correct_result.node_count[i]  , "{} {}", result.node_count[i], correct_result.node_count[i]);
-            assert!(result.captures[i]    == correct_result.captures[i]    , "{} {}", result.captures[i], correct_result.captures[i]);
-            assert!(result.ep_captures[i] == correct_result.ep_captures[i] , "{} {}", result.ep_captures[i], correct_result.ep_captures[i]);
-            assert!(result.castles[i]     == correct_result.castles[i]     , "{} {}", result.castles[i], correct_result.castles[i]);
-            assert!(result.promotions[i]  == correct_result.promotions[i]  , "{} {}", result.promotions[i], correct_result.promotions[i]);
-            assert!(result.checks[i]      == correct_result.checks[i]      , "{} {}", result.checks[i], correct_result.checks[i]);
-            assert!(result.check_mates[i] == correct_result.check_mates[i] , "{} {}", result.check_mates[i], correct_result.check_mates[i]);
-        }
+        assert!(result == correct_result);
+    }
+
+    #[test]
+    fn kiwipete() {
+        let mut correct_result = PerftResult::new();
+
+        correct_result.node_count[1] = 48;
+        correct_result.node_count[2] = 2039;
+        correct_result.node_count[3] = 97862;
+        correct_result.node_count[4] = 4085603;
+        correct_result.node_count[5] = 193690690;
+
+        correct_result.captures[1] = 8;
+        correct_result.captures[2] = 351;
+        correct_result.captures[3] = 17102;
+        correct_result.captures[4] = 757163;
+        correct_result.captures[5] = 35043416;
+
+        correct_result.ep_captures[1] = 0;
+        correct_result.ep_captures[2] = 1;
+        correct_result.ep_captures[3] = 45;
+        correct_result.ep_captures[4] = 1929;
+        correct_result.ep_captures[5] = 73365;
+
+        correct_result.castles[1] = 2;
+        correct_result.castles[2] = 91;
+        correct_result.castles[3] = 3162;
+        correct_result.castles[4] = 128013;
+        correct_result.castles[5] = 4993637;
+
+        correct_result.promotions[1] = 0;
+        correct_result.promotions[2] = 0;
+        correct_result.promotions[3] = 0;
+        correct_result.promotions[4] = 15172;
+        correct_result.promotions[5] = 8392;
+
+        correct_result.checks[1] = 0;
+        correct_result.checks[2] = 3;
+        correct_result.checks[3] = 993;
+        correct_result.checks[4] = 25523;
+        correct_result.checks[5] = 3309887;
+
+        correct_result.check_mates[1] = 0;
+        correct_result.check_mates[2] = 0;
+        correct_result.check_mates[3] = 1;
+        correct_result.check_mates[4] = 43;
+        correct_result.check_mates[5] = 30171;
+
+        let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+        let result = perft(g, 5);
+
+        assert!(result == correct_result);
 
     }
 }

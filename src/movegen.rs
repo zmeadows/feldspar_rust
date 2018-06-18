@@ -449,7 +449,7 @@ impl MoveBufferData {
                 {
                     if to.rank() == promotion_rank {
                         self.list.add(Move::new_capture(from, to, KNIGHT_PROMO_CAPTURE_FLAG, Pawn, opp_ptype_at(to)));
-                        self.list.add(Move::new_capture(from, to, BISHOP_PROMO_FLAG, Pawn, opp_ptype_at(to)));
+                        self.list.add(Move::new_capture(from, to, BISHOP_PROMO_CAPTURE_FLAG, Pawn, opp_ptype_at(to)));
                         self.list.add(Move::new_capture(from, to, ROOK_PROMO_CAPTURE_FLAG, Pawn, opp_ptype_at(to)));
                         self.list.add(Move::new_capture(from, to, QUEEN_PROMO_CAPTURE_FLAG, Pawn, opp_ptype_at(to)));
                     } else {
