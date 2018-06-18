@@ -135,22 +135,20 @@ impl PerftContext {
 
 pub fn perft(game: Game, depth: usize) -> PerftResult {
     // let num_cpus = num_cpus::get() - 2;
-
     // let mut threads = Vec::new();
 
     let start_time = PreciseTime::now();
 
-    // for move_subset in move_vec.chunks(move_vec.len() / num_cpus - 1) {
-    //     let mut move_subset_vec = MoveList::new();
-    //     for m in move_subset {
-    //         move_subset_vec.add(m.clone());
-    //     }
-
-    //     let game_clone = game.clone();
+    // for move_subset in next_moves_standalone_chunked(&game, num_cpus) {
 
     //     threads.push(thread::spawn(move || {
-    //         let mut pc = PerftContext::new(game_clone);
-    //         return pc.go(depth, Some(&move_subset_vec));
+
+    //         for m in move_subset {
+    //             let game_clone = game.clone();
+    //             let mut pc = PerftContext::new(game_clone);
+    //             return pc.go(depth);
+    //         }
+
     //     }));
     // }
 

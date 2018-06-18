@@ -56,7 +56,7 @@ impl GameTree {
 
         let mut buf = self.move_stack[self.depth].borrow_mut();
         buf.clear();
-        let can_move = buf.generate_moves(&self.game, true);
+        let can_move = buf.can_move(&self.game);
 
         // no moves available, game is over
         if !can_move {
