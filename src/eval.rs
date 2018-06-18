@@ -77,12 +77,12 @@ fn piece_square_value(color: Color, ptype: PieceType, sq: Square) -> i32 {
     };
 
     return sf * match ptype {
-        PieceType::Pawn   => PAWN_TABLE[idx],
-        PieceType::Knight => KNIGHT_TABLE[idx],
-        PieceType::Bishop => BISHOP_TABLE[idx],
-        PieceType::Rook   => ROOK_TABLE[idx],
-        PieceType::Queen  => QUEEN_TABLE[idx],
-        PieceType::King   => KING_TABLE[idx]
+        PieceType::Pawn   => unsafe { *PAWN_TABLE.get_unchecked(idx) },
+        PieceType::Knight => unsafe { *KNIGHT_TABLE.get_unchecked(idx) },
+        PieceType::Bishop => unsafe { *BISHOP_TABLE.get_unchecked(idx) },
+        PieceType::Rook   => unsafe { *ROOK_TABLE.get_unchecked(idx) },
+        PieceType::Queen  => unsafe { *QUEEN_TABLE.get_unchecked(idx) },
+        PieceType::King   => unsafe { *KING_TABLE.get_unchecked(idx) }
     };
 }
 

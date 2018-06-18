@@ -36,12 +36,12 @@ impl Board {
 
     pub fn get_pieces(&self, color: Color, ptype: PieceType) -> Bitboard {
         let idx = 2 * (ptype as usize - 1) + color as usize;
-        return self.pieces[idx];
+        return unsafe { *self.pieces.get_unchecked(idx) };
     }
 
     pub fn get_pieces_mut(&mut self, color: Color, ptype: PieceType) -> &mut Bitboard {
         let idx = 2 * (ptype as usize - 1) + color as usize;
-        return &mut self.pieces[idx];
+        return unsafe { self.pieces.get_unchecked_mut(idx) };
     }
 
     pub fn set_piece_bit(&mut self, color: Color, ptype: PieceType, square: Square) {
@@ -98,17 +98,20 @@ impl Board {
 
     pub fn get_king_square(&self, color: Color) -> Square {
         let k = self.get_pieces(color, PieceType::King);
-        self.get_pieces(color, PieceType::King).bitscan_forward()
+        k.bitscan_forward()
     }
 
     pub fn attackers(&self, square: Square, color: Color) -> Bitboard {
         use PieceType::*;
 
         let mut attackers: Bitboard = Bitboard::new(0);
+        let idx = square.idx();
 
-        attackers |= PAWN_ATTACKS[!color as usize][square.idx()] & self.get_pieces(color, Pawn);
-        attackers |= KNIGHT_TABLE[square.idx()] & self.get_pieces(color, Knight);
-        attackers |= KING_TABLE[square.idx()] & self.get_pieces(color, King);
+        unsafe {
+            attackers |= *PAWN_ATTACKS.get_unchecked(!color as usize).get_unchecked(idx) & self.get_pieces(color, Pawn);
+            attackers |= *KNIGHT_TABLE.get_unchecked(idx) & self.get_pieces(color, Knight);
+            attackers |= *KING_TABLE.get_unchecked(idx) & self.get_pieces(color, King);
+        }
 
         let occupied = self.occupied();
 
@@ -138,12 +141,16 @@ impl Board {
         let attacking_pieces = self.occupied_by(attacking_color);
         let all_pieces = defending_pieces | attacking_pieces;
 
-        for from in self.get_pieces(attacking_color, Pawn) {
-            attacked |= PAWN_ATTACKS[attacking_color as usize][from.idx()];
-        }
+        unsafe {
+            for from in self.get_pieces(attacking_color, Pawn) {
+                attacked |= *PAWN_ATTACKS.get_unchecked(attacking_color as usize).get_unchecked(from.idx());
+            }
 
-        for from in self.get_pieces(attacking_color, Knight) {
-            attacked |= KNIGHT_TABLE[from.idx()];
+            for from in self.get_pieces(attacking_color, Knight) {
+                attacked |= *KNIGHT_TABLE.get_unchecked(from.idx());
+            }
+
+            attacked |= *KING_TABLE.get_unchecked(self.get_king_square(attacking_color).idx());
         }
 
         for from in self.get_pieces(attacking_color, Bishop) {
@@ -158,7 +165,6 @@ impl Board {
             attacked |= get_queen_rays(from, all_pieces);
         }
 
-        attacked |= KING_TABLE[self.get_king_square(attacking_color).idx()];
 
         return attacked;
     }

@@ -840,11 +840,18 @@ pub const PAWN_ATTACKS: [[Bitboard;64];2] =
 
 pub fn get_positive_ray(square: Square, dir: Direction, mut occupied: Bitboard) -> Bitboard
 {
-   let attacks = RAY_TABLE[dir as usize][square.idx()];
+   let attacks = unsafe {
+       *RAY_TABLE.get_unchecked(dir as usize)
+                 .get_unchecked(square.idx())
+   };
+
    occupied &= attacks;
    if occupied.nonempty() {
       let blocker_square = occupied.bitscan_forward();
-      return attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()];
+      return attacks ^ unsafe { 
+          *RAY_TABLE.get_unchecked(dir as usize)
+                    .get_unchecked(blocker_square.idx())
+      };
    } else {
        return attacks;
    }
@@ -852,12 +859,18 @@ pub fn get_positive_ray(square: Square, dir: Direction, mut occupied: Bitboard) 
 
 pub fn get_negative_ray(square: Square, dir: Direction, mut occupied: Bitboard) -> Bitboard
 {
-   let attacks = RAY_TABLE[dir as usize][square.idx()];
+   let attacks = unsafe {
+       *RAY_TABLE.get_unchecked(dir as usize)
+                 .get_unchecked(square.idx())
+   };
    occupied &= attacks;
    // TODO: don't use nonemtpy and bitscan_reverse calls, bitscan_reverse is enough
    if occupied.nonempty() {
       let blocker_square = occupied.bitscan_reverse();
-      return attacks ^ RAY_TABLE[dir as usize][blocker_square.idx()];
+      return attacks ^ unsafe {
+          *RAY_TABLE.get_unchecked(dir as usize)
+                    .get_unchecked(blocker_square.idx())
+      };
    } else {
        return attacks;
    }
