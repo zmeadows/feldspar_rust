@@ -1,3 +1,4 @@
+use std::ops::Not;
 use std::slice::Iter;
 use std::str::Chars;
 
@@ -9,7 +10,7 @@ pub struct Square(u32);
 
 impl Square {
     pub fn new(idx: u32) -> Square {
-        assert!(idx < 64, "Attempted to create Square with invalid index! {}", idx);
+        debug_assert!(idx < 64, "Attempted to create Square with invalid index! {}", idx);
         Square(idx)
     }
 
@@ -135,7 +136,6 @@ impl PieceType {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Color { White, Black }
 
-use std::ops::Not;
 impl Not for Color {
     type Output = Color;
     fn not(self) -> Color {
@@ -161,3 +161,11 @@ impl Piece {
     }
 }
 
+bitflags! {
+    pub struct CastlingRights: u8 {
+        const WHITE_KINGSIDE  = 0b0001;
+        const WHITE_QUEENSIDE = 0b0010;
+        const BLACK_KINGSIDE  = 0b0100;
+        const BLACK_QUEENSIDE = 0b1000;
+    }
+}

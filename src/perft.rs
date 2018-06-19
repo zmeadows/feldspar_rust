@@ -21,11 +21,12 @@ use prettytable::Table;
 use prettytable::cell::Cell;
 use prettytable::row::Row;
 
+//TODO: read from ENV variable
 const QPERFT_PATH: &'static str = "/Users/zac/Code/qperft/qperft";
 const MAX_PERFT_DEPTH: usize = 20;
 
 struct PerftContext {
-    tree: GameTree,
+    tree: SearchTree,
     result: PerftResult
 }
 
@@ -81,48 +82,48 @@ impl Add for PerftResult {
 impl PerftContext {
     fn new(perft_game: Game) -> PerftContext {
         PerftContext {
-            tree: GameTree::new(perft_game),
+            tree: SearchTree::new(perft_game),
             result: PerftResult::new()
         }
     }
 
     fn go(&mut self, max_depth: usize) {
 
-        if self.tree.depth == max_depth {
+        if self.tree.search_depth() == max_depth {
             return;
         }
 
         let next_moves = self.tree.next_moves();
 
-        for m in next_moves.borrow().list.iter() {
-            let game_copy = self.tree.game.clone();
+        for m in next_moves.borrow().iter() {
+            let game_copy = *self.tree.focus();
 
             self.tree.make_move(*m);
 
-            self.result.node_count[self.tree.depth] += 1;
+            self.result.node_count[self.tree.search_depth()] += 1;
 
             if m.flag() == EP_CAPTURE_FLAG {
-                self.result.ep_captures[self.tree.depth] += 1;
+                self.result.ep_captures[self.tree.search_depth()] += 1;
             }
 
             if m.is_capture() {
-                self.result.captures[self.tree.depth] += 1;
+                self.result.captures[self.tree.search_depth()] += 1;
             }
 
             if m.flag() == KING_CASTLE_FLAG || m.flag() == QUEEN_CASTLE_FLAG {
-                self.result.castles[self.tree.depth] += 1;
+                self.result.castles[self.tree.search_depth()] += 1;
             }
 
             if m.is_promotion() {
-                self.result.promotions[self.tree.depth] += 1;
+                self.result.promotions[self.tree.search_depth()] += 1;
             }
 
-            if self.tree.game.king_attackers.population() > 0 {
-                self.result.checks[self.tree.depth] += 1;
+            if self.tree.focus().in_check() {
+                self.result.checks[self.tree.search_depth()] += 1;
             }
 
-            match self.tree.game.outcome {
-                Some(GameResult::Win(_)) => self.result.check_mates[self.tree.depth] += 1,
+            match self.tree.focus().outcome {
+                Some(GameResult::Win(_)) => self.result.check_mates[self.tree.search_depth()] += 1,
                 _ => {}
             }
 

@@ -11,12 +11,27 @@ impl Score {
         Score { val: s }
     }
 
+    //TODO: https://chessprogramming.wikispaces.com/Score#Terminal Nodes-Mate Scores
+    pub fn infinity() -> Score {
+        Score::new(100000)
+    }
+
+    //TODO: https://chessprogramming.wikispaces.com/Score#Terminal Nodes-Mate Scores
     pub fn max() -> Score {
-        Score::new(<i32>::max_value())
+        Score::new(50000)
+    }
+
+    //TODO: https://chessprogramming.wikispaces.com/Score#Terminal Nodes-Mate Scores
+    pub fn max_at_depth(depth: usize) -> Score {
+        Score::new(50000 - depth as i32)
     }
 
     pub fn min() -> Score {
-        Score::new(<i32>::min_value())
+        Score::new(-50000)
+    }
+
+    pub fn min_at_depth(depth: usize) -> Score {
+        Score::new(-50000 + depth as i32)
     }
 
     pub fn flip(&self) -> Score {
@@ -35,8 +50,6 @@ impl Phase {
         let rook_phase = 2;
         let queen_phase = 4;
         let total_phase = knight_phase*4 + bishop_phase*4 + rook_phase*4 + queen_phase*2;
-
-        // println!("total_phase: {}", total_phase);
 
         let mut phase = total_phase;
 
@@ -58,12 +71,12 @@ impl Phase {
 
 
 impl Score {
-    pub fn recompute(game: &Game) -> Score {
+    pub fn recompute(game: &Game, search_depth: usize) -> Score {
         use PieceType::*; use Color::*;
 
         match game.outcome {
-            Some(GameResult::Win(White)) => return Score::max(),
-            Some(GameResult::Win(Black)) => return Score::min(),
+            Some(GameResult::Win(White)) => return Score::max_at_depth(search_depth),
+            Some(GameResult::Win(Black)) => return Score::min_at_depth(search_depth),
             Some(GameResult::Draw) => return Score::new(0),
             None => {}
         }
@@ -122,25 +135,16 @@ fn piece_square_value(color: Color, ptype: PieceType, sq: Square) -> (i32,i32) {
         Color::Black => -1
     };
 
-    let mid_val = sf * match ptype {
-        PieceType::Pawn   => unsafe { PAWN_TABLE.get_unchecked(idx).0 },
-        PieceType::Knight => unsafe { KNIGHT_TABLE.get_unchecked(idx).0 },
-        PieceType::Bishop => unsafe { BISHOP_TABLE.get_unchecked(idx).0 },
-        PieceType::Rook   => unsafe { ROOK_TABLE.get_unchecked(idx).0 },
-        PieceType::Queen  => unsafe { QUEEN_TABLE.get_unchecked(idx).0 },
-        PieceType::King   => unsafe { KING_TABLE.get_unchecked(idx).0 }
+    let (mid_val, end_val): (i32,i32) = match ptype {
+        PieceType::Pawn   => unsafe { *PAWN_TABLE.get_unchecked(idx) }
+        PieceType::Knight => unsafe { *KNIGHT_TABLE.get_unchecked(idx) },
+        PieceType::Bishop => unsafe { *BISHOP_TABLE.get_unchecked(idx) },
+        PieceType::Rook   => unsafe { *ROOK_TABLE.get_unchecked(idx) },
+        PieceType::Queen  => unsafe { *QUEEN_TABLE.get_unchecked(idx) },
+        PieceType::King   => unsafe { *KING_TABLE.get_unchecked(idx) }
     };
 
-    let end_val = sf * match ptype {
-        PieceType::Pawn   => unsafe { PAWN_TABLE.get_unchecked(idx).1 },
-        PieceType::Knight => unsafe { KNIGHT_TABLE.get_unchecked(idx).1 },
-        PieceType::Bishop => unsafe { BISHOP_TABLE.get_unchecked(idx).1 },
-        PieceType::Rook   => unsafe { ROOK_TABLE.get_unchecked(idx).1 },
-        PieceType::Queen  => unsafe { QUEEN_TABLE.get_unchecked(idx).1 },
-        PieceType::King   => unsafe { KING_TABLE.get_unchecked(idx).1 }
-    };
-
-    return (mid_val, end_val);
+    return (sf * mid_val, sf * end_val);
 }
 
 fn material_value(ptype: PieceType) -> i32 {

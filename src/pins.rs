@@ -40,7 +40,7 @@ impl PinFinder {
             let connecting_bits = ray_between_squares(king_square, pinner_square);
             let pinned_bit = connecting_bits & friendly_pieces;
             self.nondiag_pin_map[pinned_bit.bitscan_forward().idx()] = connecting_bits;
-            assert!(pinned_bit.population() == 1);
+            debug_assert!(pinned_bit.population() == 1);
             self.pinned_nondiagonally |= pinned_bit;
         }
 
@@ -50,7 +50,7 @@ impl PinFinder {
             let connecting_bits = ray_between_squares(king_square, pinner_square);
             let pinned_bit = connecting_bits & friendly_pieces;
             self.diag_pin_map[pinned_bit.bitscan_forward().idx()] = connecting_bits;
-            assert!(pinned_bit.population() == 1);
+            debug_assert!(pinned_bit.population() == 1);
             self.pinned_diagonally |= pinned_bit;
         }
     }

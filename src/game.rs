@@ -4,17 +4,9 @@ use core::*;
 use moves::*;
 use tables::*;
 use eval::*;
+use movegen::*;
 
 use std::str::SplitWhitespace;
-
-bitflags! {
-    pub struct CastlingRights: u8 {
-        const WHITE_KINGSIDE  = 0b0001;
-        const WHITE_QUEENSIDE = 0b0010;
-        const BLACK_KINGSIDE  = 0b0100;
-        const BLACK_QUEENSIDE = 0b1000;
-    }
-}
 
 #[derive(Debug,PartialEq,Clone, Copy)]
 pub enum GameResult {
@@ -28,9 +20,9 @@ pub struct Game {
     pub to_move: Color,
     pub ep_square: Option<Square>,
     pub castling_rights: CastlingRights,
-    pub fifty_move_count: u8,
-    pub moves_played: u16,
-    pub recent_moves: [Move;8],
+    pub halfmove_clock: u8,
+    pub fullmoves: u16,
+    pub king_danger_squares: Bitboard,
     pub king_attackers: Bitboard,
     pub outcome: Option<GameResult>
 }
@@ -41,17 +33,13 @@ impl Game {
         Game::from_fen_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
     }
 
-    pub fn last_move_was_capture(&self) -> bool {
-        self.recent_moves[7].is_capture()
-    }
-
-    pub fn is_draw_by_repetition(&self) -> bool {
-        self.moves_played > 8
-            && self.recent_moves[0] == self.recent_moves[4]
-            && self.recent_moves[2] == self.recent_moves[6]
-            && self.recent_moves[1] == self.recent_moves[5]
-            && self.recent_moves[3] == self.recent_moves[7]
-    }
+    // fn is_draw_by_repetition(&self) -> bool {
+    //     self.fullmoves > 8
+    //         && self.recent_moves[0] == self.recent_moves[4]
+    //         && self.recent_moves[2] == self.recent_moves[6]
+    //         && self.recent_moves[1] == self.recent_moves[5]
+    //         && self.recent_moves[3] == self.recent_moves[7]
+    // }
 
     pub fn empty_position() -> Game {
         Game {
@@ -59,12 +47,16 @@ impl Game {
             to_move: Color::White,
             ep_square: None,
             castling_rights: CastlingRights::empty(),
-            fifty_move_count: 0,
-            moves_played: 0,
-            recent_moves: [Move::null(); 8],
-            king_attackers: Bitboard::new(0),
+            halfmove_clock: 0,
+            fullmoves: 1,
+            king_danger_squares: Bitboard::none_set(),
+            king_attackers: Bitboard::none_set(),
             outcome: None
         }
+    }
+
+    pub fn in_check(&self) -> bool {
+        self.king_attackers.population() > 0
     }
 
     pub fn to_fen(&self) -> String {
@@ -81,7 +73,7 @@ impl Game {
             let maybe_piece = self.board.piece_at(sq);
 
             if (maybe_piece.is_some() || wrapped_across_row) && empty_tally > 0 {
-                assert!(empty_tally <= 8);
+                debug_assert!(empty_tally <= 8);
                 board_str.push_str(&empty_tally.to_string());
                 empty_tally = 0;
             }
@@ -148,17 +140,15 @@ impl Game {
                 to_move_str,
                 castling_str,
                 ep_square_str,
-                self.fifty_move_count.to_string(),
-                self.moves_played.to_string()
+                self.halfmove_clock.to_string(),
+                self.fullmoves.to_string()
         ].join(" ");
     }
 
-    //TODO: detect draw/checkmate from FEN?
     pub fn from_fen_str<'a>(fen: &'a str) -> Option<Game> {
         let mut fen_split = fen.split_whitespace();
         Game::from_fen(&mut fen_split)
     }
-
 
     pub fn from_fen<'a>(args: &mut SplitWhitespace<'a>) -> Option<Game> {
         let mut game = Game::empty_position();
@@ -234,12 +224,12 @@ impl Game {
 
         match args.next().expect("Missing fifty move count in FEN string").parse::<u8>() {
             Err(_) => return None,
-            Ok(x) => game.fifty_move_count = x
+            Ok(x) => game.halfmove_clock = x
         }
 
         match args.next().expect("Missing move count in FEN string").parse::<u16>() {
             Err(_) => return None,
-            Ok(x) => game.moves_played = x
+            Ok(x) => game.fullmoves = x
         }
 
         let king_square     = game.board.get_king_square(game.to_move);
@@ -247,32 +237,6 @@ impl Game {
 
         return Some(game);
     }
-
-    // pub fn outcome(&self, move_count: usize) -> Option<GameResult> {
-    //     let check_multiplicity  = self.king_attackers.population();
-
-    //     if move_count == 0 && check_multiplicity > 0 {
-    //         return Some(GameResult::Win(!self.to_move));
-    //     }
-
-    //     if move_count == 0 && check_multiplicity == 0 {
-    //         return Some(GameResult::Draw);
-    //     }
-
-    //     if self.fifty_move_count >= 50 {
-    //         return Some(GameResult::Draw);
-    //     }
-
-    //     if self.board.occupied().population() == 2 {
-    //         return Some(GameResult::Draw);
-    //     }
-
-    //     if self.is_draw_by_repetition() {
-    //         return Some(GameResult::Draw);
-    //     }
-
-    //     return None;
-    // }
 
     pub fn make_move(&mut self, m: Move) {
         let from_sq        = m.from();
@@ -312,13 +276,6 @@ impl Game {
                 };
         }
 
-        if is_capture != captured_ptype.is_some() {
-            self.board.print();
-            m.print();
-            println!("{:?} {} {}", captured_ptype, is_capture, m.flag());
-        }
-        assert!(is_capture == captured_ptype.is_some());
-
         match moved_ptype {
             Pawn => {
                 *self.board.get_pieces_mut(self.to_move, Pawn) ^= from_to_bit;
@@ -333,7 +290,7 @@ impl Game {
 
                 if is_capture {
                     if flag == EP_CAPTURE_FLAG {
-                        assert!(self.ep_square.is_some());
+                        debug_assert!(self.ep_square.is_some());
 
                         let captured_bit = match moving_color {
                             White => self.ep_square.unwrap().bitrep().shifted_down(),
@@ -476,32 +433,35 @@ impl Game {
         }
 
         if is_capture || moved_ptype == Pawn {
-            self.fifty_move_count = 0;
+            self.halfmove_clock = 0;
         } else {
-            self.fifty_move_count += 1;
+            self.halfmove_clock += 1;
         }
 
-        if self.fifty_move_count >= 50 {
-            self.outcome = Some(GameResult::Draw);
+        if self.to_move == Black {
+            self.fullmoves += 1;
         }
 
         self.to_move = !self.to_move;
 
         let opp_king_square = self.board.get_king_square(opponent_color);
         self.king_attackers = self.board.attackers(opp_king_square, !self.to_move);
+        self.king_danger_squares = self.board.attacked(!self.to_move, true);
 
-        if self.to_move == White {
-            self.moves_played += 1;
+        let can_move = can_move(self);
+
+        // no moves available, game is over
+        if !can_move {
+            match self.king_attackers.population() {
+                0 => self.outcome = Some(GameResult::Draw),
+                _ => match self.to_move {
+                         Color::White => self.outcome = Some(GameResult::Win(Color::Black)),
+                         Color::Black => self.outcome = Some(GameResult::Win(Color::White))
+                     }
+            }
         }
 
-        for i in 0 .. 7 {
-            self.recent_moves[i] = self.recent_moves[i+1]
-        }
-        self.recent_moves[7] = m;
-
-        if self.is_draw_by_repetition() {
-            self.outcome = Some(GameResult::Draw);
-        }
+        //NOTE: only the three-fold repetition rule isn't account for here.
     }
 }
 

@@ -1,20 +1,13 @@
-slowest parts:
-    remove/add piece to score in make_move (Wtf)
-    king attackers in make_move
-    copy board in tree navigation
-    get_X_rays for X = rook, bishop, queen
-    king_moves in can_move/generate_moves
-    get king square in can_move/generate_moves
-
-remove traces of piece_squares and encode piece types in move data
+find out why feldspar is not following forced mates it discovers
 
 save best line in GameTree
 
-
 don't test for promotion during every pawn move check, do separate for loop
 
-after quiscence search, make search parallel again
+add quiscence search
 
 clean up make_move
 
 eventually: disable array bounds check everywhere that is well-tested
+
+test for search: play random games against self and count win/loss/draw count

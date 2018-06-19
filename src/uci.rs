@@ -4,6 +4,7 @@ use std::str::SplitWhitespace;
 
 use game::*;
 use movegen::*;
+use moves::*;
 
 pub trait UCIEngine {
     fn name(&self) -> &'static str;
@@ -11,13 +12,12 @@ pub trait UCIEngine {
     fn init(&mut self) -> () {}
     fn reset(&mut self) -> () {}
     fn find_best_move(&mut self) -> ();
-    fn replace_game(&mut self, game: Game);
+    fn replace_game(&mut self, new_game: Game, moves_played: Vec<Move>);
     //fn find_best_move(&mut self, wtime: usize, btime: usize, winc: usize, binc: usize, movestogo: usize) -> ();
     // fn infinite_search(&mut self) -> ();
 
     //TODO: move to UCIEngine trait default implementation
     fn update_position<'a>(&mut self, args: &mut SplitWhitespace<'a>) {
-
         let mut g = Game::empty_position();
 
         match args.next() {
@@ -36,18 +36,20 @@ pub trait UCIEngine {
             _ => return
         }
 
+        let mut moves = Vec::new();
         loop {
             if let Some(move_str) = args.next() {
                 let m = move_from_algebraic(&g, move_str.to_string()).unwrap();
                 g.make_move(m);
+                moves.push(m);
             } else {
                 break;
             }
         }
 
-        eprintln!("FEN: {}", g.to_fen());
+        eprintln!("FEN re-created by feldspar: {}", g.to_fen());
 
-        self.replace_game(g);
+        self.replace_game(g, moves);
     }
 
     fn run(&mut self) -> () {

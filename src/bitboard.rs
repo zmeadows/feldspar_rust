@@ -20,12 +20,15 @@ impl Bitboard {
     pub fn nonempty(self) -> bool { return self.0 != 0; }
     pub fn empty(self) -> bool { return self.0 == 0; }
 
+    pub fn all_set() -> Bitboard { Bitboard::new(u64::max_value()) }
+    pub fn none_set() -> Bitboard { Bitboard::new(0) }
+
     pub fn shifted_up(self) -> Bitboard { return Bitboard(self.0 << 8); }
     pub fn shifted_down(self) -> Bitboard { return Bitboard(self.0 >> 8); }
-    // pub fn shifted_left(self) -> Bitboard { return Bitboard(self.0 >> 1); }
-    // pub fn shifted_right(self) -> Bitboard { return Bitboard(self.0 << 1); }
 
     pub fn population(self) -> u32 { self.0.count_ones() }
+
+    pub fn unwrap(self) -> u64 { self.0 }
 }
 
 impl BitAnd for Bitboard {

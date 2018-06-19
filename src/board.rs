@@ -95,7 +95,7 @@ impl Board {
         return None;
     }
 
-
+    //OPTIMIZE: keep king squares in Game struct?
     pub fn get_king_square(&self, color: Color) -> Square {
         let k = self.get_pieces(color, PieceType::King);
         k.bitscan_forward()

@@ -132,19 +132,19 @@ mod test {
     fn random_flag() -> u32 {
         match thread_rng().gen_range(0,14) {
             0 => QUIET_FLAG,
-            1 => DOUBLE_PAWN_PUSH_FLAG,     
-            2 => KING_CASTLE_FLAG,          
-            3 => QUEEN_CASTLE_FLAG,         
-            4 => CAPTURE_FLAG,              
-            5 => EP_CAPTURE_FLAG,           
-            6 => KNIGHT_PROMO_FLAG,         
-            7 => BISHOP_PROMO_FLAG,         
-            8 => ROOK_PROMO_FLAG,          
-            9 => QUEEN_PROMO_FLAG,         
+            1 => DOUBLE_PAWN_PUSH_FLAG,
+            2 => KING_CASTLE_FLAG,
+            3 => QUEEN_CASTLE_FLAG,
+            4 => CAPTURE_FLAG,
+            5 => EP_CAPTURE_FLAG,
+            6 => KNIGHT_PROMO_FLAG,
+            7 => BISHOP_PROMO_FLAG,
+            8 => ROOK_PROMO_FLAG,
+            9 => QUEEN_PROMO_FLAG,
             10 => KNIGHT_PROMO_CAPTURE_FLAG,
-            11 => BISHOP_PROMO_CAPTURE_FLAG, 
-            12 => ROOK_PROMO_CAPTURE_FLAG,   
-            13 => QUEEN_PROMO_CAPTURE_FLAG, 
+            11 => BISHOP_PROMO_CAPTURE_FLAG,
+            12 => ROOK_PROMO_CAPTURE_FLAG,
+            13 => QUEEN_PROMO_CAPTURE_FLAG,
             _ => panic!("Invalid random flag generation!")
         }
     }
