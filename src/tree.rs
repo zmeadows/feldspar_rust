@@ -66,18 +66,15 @@ impl GameTree {
                 // check mate
                 match self.game.to_move {
                     Color::White => {
-                        self.game.score = Score::min();
                         self.game.outcome = Some(GameResult::Win(Color::Black));
                     },
 
                     Color::Black => {
-                        self.game.score = Score::max();
                         self.game.outcome = Some(GameResult::Win(Color::White));
                     }
                 }
             } else {
                 // stale mate
-                self.game.score = Score::new(0);
                 self.game.outcome = Some(GameResult::Draw);
             }
         }

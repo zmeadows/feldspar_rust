@@ -89,7 +89,7 @@ impl Square {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub enum PieceType {
     Pawn = 1,
     Knight = 2,
@@ -161,23 +161,3 @@ impl Piece {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
-pub struct Score { pub val: i32 }
-
-impl Score {
-    pub fn new(s: i32) -> Score {
-        Score { val: s }
-    }
-
-    pub fn max() -> Score {
-        Score::new(<i32>::max_value())
-    }
-
-    pub fn min() -> Score {
-        Score::new(<i32>::min_value())
-    }
-
-    pub fn flip(&self) -> Score {
-        Score::new(self.val * -1)
-    }
-}

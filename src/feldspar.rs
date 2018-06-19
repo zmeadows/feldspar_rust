@@ -3,6 +3,7 @@ use movegen::*;
 use search::*;
 use tree::*;
 use uci::*;
+use eval::*;
 
 use std::str::SplitWhitespace;
 
@@ -26,12 +27,15 @@ impl UCIEngine for Feldspar {
     fn find_best_move(&mut self) {
         self.tree.trim();
 
-        let (best_move, _) = alpha_beta(&mut self.tree, 9);
+        let (best_move, best_score) = alpha_beta(&mut self.tree, 6);
 
         println!( "bestmove {}{}"
                 , best_move.from().to_algebraic()
                 , best_move.to().to_algebraic()
                 );
+
+        eprintln!("static score: {:?}", Score::recompute(&self.tree.game));
+        eprintln!("best ab score: {:?}", best_score);
     }
 
     fn replace_game(&mut self, new_game: Game) {

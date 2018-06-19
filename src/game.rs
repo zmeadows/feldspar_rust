@@ -32,7 +32,6 @@ pub struct Game {
     pub moves_played: u16,
     pub recent_moves: [Move;8],
     pub king_attackers: Bitboard,
-    pub score: Score, //TODO: GameTree -> SearchTree and add score/outcome to it?
     pub outcome: Option<GameResult>
 }
 
@@ -64,7 +63,6 @@ impl Game {
             moves_played: 0,
             recent_moves: [Move::null(); 8],
             king_attackers: Bitboard::new(0),
-            score: Score::new(0),
             outcome: None
         }
     }
@@ -246,7 +244,6 @@ impl Game {
 
         let king_square     = game.board.get_king_square(game.to_move);
         game.king_attackers = game.board.attackers(king_square, !game.to_move);
-        game.score = recompute_score(&game.board);
 
         return Some(game);
     }
@@ -295,9 +292,6 @@ impl Game {
         use Color::*;
         use PieceType::*;
 
-        self.score.remove_piece(moved_piece, from_sq);
-        self.score.add_piece(moved_piece, to_sq);
-
         if is_capture {
             match to_sq.idx() {
                 0 => self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE),
@@ -316,8 +310,6 @@ impl Game {
                 } else {
                     to_sq
                 };
-
-            self.score.remove_piece(Piece::new(opponent_color, captured_ptype.unwrap()), captured_square);
         }
 
         if is_capture != captured_ptype.is_some() {
@@ -363,25 +355,21 @@ impl Game {
                         *self.board.get_pieces_mut(moving_color, Knight) |= to_bit;
 
                         let promo_piece = Piece::new(moving_color, Knight);
-                        self.score.add_piece(promo_piece, to_sq);
 
                     } else if flag == BISHOP_PROMO_FLAG || flag == BISHOP_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Bishop) |= to_bit;
 
                         let promo_piece = Piece::new(moving_color, Bishop);
-                        self.score.add_piece(promo_piece, to_sq);
 
                     } else if flag == ROOK_PROMO_FLAG || flag == ROOK_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Rook) |= to_bit;
 
                         let promo_piece = Piece::new(moving_color, Rook);
-                        self.score.add_piece(promo_piece, to_sq);
 
                     } else if flag == QUEEN_PROMO_FLAG || flag == QUEEN_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Queen) |= to_bit;
 
                         let promo_piece = Piece::new(moving_color, Queen);
-                        self.score.add_piece(promo_piece, to_sq);
                     }
                 }
 
@@ -440,7 +428,6 @@ impl Game {
                 }
             },
 
-            //BUGFIX: modify score for rook move here!
             King => {
                 *self.board.get_pieces_mut(self.to_move, King) ^= from_to_bit;
                 *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
@@ -495,7 +482,6 @@ impl Game {
         }
 
         if self.fifty_move_count >= 50 {
-            self.score = Score::new(0);
             self.outcome = Some(GameResult::Draw);
         }
 
@@ -514,7 +500,6 @@ impl Game {
         self.recent_moves[7] = m;
 
         if self.is_draw_by_repetition() {
-            self.score = Score::new(0);
             self.outcome = Some(GameResult::Draw);
         }
     }

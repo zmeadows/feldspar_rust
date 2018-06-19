@@ -1,5 +1,6 @@
 use core::*;
 use moves::*;
+use std::cmp::Ordering;
 
 #[derive(Clone, Copy)]
 pub struct MoveList {
@@ -31,8 +32,31 @@ impl MoveList {
     pub fn at(&self, idx: usize) -> Move { return self.moves[idx]; }
 
     pub fn sort(&mut self) {
-        //TODO: https://chessprogramming.wikispaces.com/Move%20Ordering
-        return;
+        self.moves[..self.count].sort_by(|m1, m2| {
+            if m1.is_capture() && !m2.is_capture() {
+                return Ordering::Less;
+            } else if !m1.is_capture() && m2.is_capture() {
+                return Ordering::Greater;
+            } else if m1.is_capture() && m2.is_capture() { 
+                let p1 = m1.captured_piece().unwrap();
+                let m1 = m1.moved_piece();
+                let p2 = m2.captured_piece().unwrap();
+                let m2 = m2.moved_piece();
+
+                let d1 = p1 as i32 - m1 as i32;
+                let d2 = p2 as i32 - m2 as i32;
+
+                if d1 > d2 {
+                    return Ordering::Less;
+                } else if d2 > d1 {
+                    return Ordering::Greater;
+                } else {
+                    return Ordering::Equal;
+                }
+            } else {
+                return Ordering::Equal;
+            }
+        });
     }
 
 }

@@ -19,7 +19,7 @@ pub trait UCIEngine {
     fn update_position<'a>(&mut self, args: &mut SplitWhitespace<'a>) {
 
         let mut g = Game::empty_position();
-        
+
         match args.next() {
             Some("startpos") => g = Game::starting_position(),
             Some("fen") => {
@@ -44,6 +44,8 @@ pub trait UCIEngine {
                 break;
             }
         }
+
+        eprintln!("FEN: {}", g.to_fen());
 
         self.replace_game(g);
     }

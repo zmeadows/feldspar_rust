@@ -120,12 +120,13 @@ impl MoveBufferData {
             }
         };
 
-        let king_moves = unsafe { *KING_TABLE.get_unchecked(king_square.idx()) };
 
         if check_multiplicity > 1 && self.stage < MoveGenStage::MultipleCheckKing {
             // If the king is in double+ check, the only legal moves are
             // king moves, so we compute them and return early.
             let king_danger_squares = game.board.attacked(!game.to_move, true);
+
+            let king_moves = unsafe { *KING_TABLE.get_unchecked(king_square.idx()) };
 
             if (king_moves & empty_squares & !king_danger_squares).nonempty() {
                 return true;
@@ -425,6 +426,8 @@ impl MoveBufferData {
 
         if self.stage < MoveGenStage::KingNonCastle {
 
+            let king_moves = unsafe { *KING_TABLE.get_unchecked(king_square.idx()) };
+
             /* quiets */
             if (king_moves & empty_squares & !king_danger_squares).nonempty() {
                 return true;
@@ -547,12 +550,13 @@ impl MoveBufferData {
             }
         };
 
-        let king_moves = KING_TABLE[king_square.idx()];
 
         if check_multiplicity > 1 && self.stage < MoveGenStage::MultipleCheckKing {
             // If the king is in double+ check, the only legal moves are
             // king moves, so we compute them and return early.
             let king_danger_squares = game.board.attacked(!game.to_move, true);
+
+            let king_moves = KING_TABLE[king_square.idx()];
 
             for to in king_moves & empty_squares & !king_danger_squares {
                 self.list.add(Move::new_quiet(king_square, to, QUIET_FLAG, King));
@@ -946,6 +950,8 @@ impl MoveBufferData {
         let king_danger_squares = game.board.attacked(!game.to_move, true);
 
         if self.stage < MoveGenStage::KingNonCastle {
+
+            let king_moves = KING_TABLE[king_square.idx()];
 
             /* quiets */
             for to in king_moves & empty_squares & !king_danger_squares {

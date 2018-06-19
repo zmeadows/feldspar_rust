@@ -3,12 +3,13 @@ use game::*;
 use movegen::*;
 use moves::*;
 use tree::*;
+use eval::*;
 
 // use std::thread;
 
 fn maxi(tree: &mut GameTree, max_depth: usize, mut alpha: Score, beta: Score) -> Score {
     if tree.depth == max_depth {
-        return tree.game.score;
+        return Score::recompute(&tree.game);
     }
 
     let next_moves = tree.next_moves();
@@ -34,7 +35,7 @@ fn maxi(tree: &mut GameTree, max_depth: usize, mut alpha: Score, beta: Score) ->
 
 fn mini(tree: &mut GameTree, max_depth: usize, alpha: Score, mut beta: Score) -> Score {
     if tree.depth == max_depth {
-        return tree.game.score;
+        return Score::recompute(&tree.game);
     }
 
     let next_moves = tree.next_moves();
@@ -86,10 +87,10 @@ pub fn alpha_beta(tree: &mut GameTree, max_depth: usize) -> (Move, Score) {
 
         tree.game = game_copy;
 
-        if tree.game.to_move == Color::White && score > best_score {
+        if tree.game.to_move == Color::White && score >= best_score {
             best_score = score;
             best_move = *m;
-        } else if tree.game.to_move == Color::Black && score < best_score {
+        } else if tree.game.to_move == Color::Black && score <= best_score {
             best_score = score;
             best_move = *m;
         }

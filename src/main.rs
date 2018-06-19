@@ -31,34 +31,27 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    // let g = Game::from_fen_str("4k3/8/8/8/8/K7/8/8 w - - 0 1").unwrap();
+    // let g = Game::from_fen_str("4r1Rk/1R5p/p7/8/P1P2q2/6QP/6PK/8 b - - 0 39").unwrap();
+
     // g.board.print();
     // println!("{:?}", recompute_score(&g.board));
 
-    // let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
-    let g = Game::starting_position();
-    perft(g, 6);
+    //let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    // let g = Game::starting_position();
+    // perft(g, 6);
     //g.board.print();
     //alphabeta(&g,7).print();
     // play_against_ai();
 
-    
-    // if true {
-    //     g.board.print();
-    //     let mut move_gen = MoveGen::new();
-    //     let move_buffer = alloc_move_buffer();
-    //     move_gen.fill_move_buffer(&g, &move_buffer);
 
-    //     for m in move_buffer.borrow().iter() {
+    //     for m in next_moves_standalone(&g).iter() {
     //         let mut game_copy = g.clone();
     //         game_copy.make_move(*m);
     //         m.print();
     //         game_copy.board.print();
     //     }
-    //     println!("moves: {}", move_buffer.borrow().len());
-    // }
 
-    // let mut f = Feldspar::new();
-    // f.run();
+    let mut f = Feldspar::new();
+    f.run();
 }
 

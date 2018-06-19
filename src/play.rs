@@ -2,14 +2,15 @@ use game::*;
 use movegen::*;
 use search::*;
 use tree::*;
+use eval::*;
 
 pub fn play_against_ai() {
-    let mut tree = GameTree::new(Game::starting_position());
+    let mut tree = GameTree::new(Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap());
 
     loop {
         tree.game.board.print();
         println!("FEN: {}", tree.game.to_fen());
-        println!("score: {}", tree.game.score.val);
+        println!("score: {}", Score::recompute(&tree.game).val);
         println!("");
         print!("Enter your move: ");
 
@@ -29,7 +30,7 @@ pub fn play_against_ai() {
             Some(m) => {
                 tree.make_move(m);
                 tree.trim();
-                let (ai_move, _) = alpha_beta(&mut tree,6);
+                let (ai_move, _) = alpha_beta(&mut tree,7);
                 tree.make_move(ai_move);
             },
             None => println!("Invalid move! Try again...")
