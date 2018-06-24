@@ -35,14 +35,6 @@ impl Game {
         Game::from_fen_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
     }
 
-    // fn is_draw_by_repetition(&self) -> bool {
-    //     self.fullmoves > 8
-    //         && self.recent_moves[0] == self.recent_moves[4]
-    //         && self.recent_moves[2] == self.recent_moves[6]
-    //         && self.recent_moves[1] == self.recent_moves[5]
-    //         && self.recent_moves[3] == self.recent_moves[7]
-    // }
-
     pub fn empty_position() -> Game {
         Game {
             board: Board::empty_position(),
@@ -489,14 +481,6 @@ impl Game {
                      }
             }
         }
-
-        if self.hash != Hash::new(&self) {
-            m.print();
-            println!("{:?} {:?}", self.hash, Hash::new(&self));
-            self.board.print();
-            assert!(false);
-        }
-
 
         //NOTE: only the three-fold repetition rule isn't account for here.
     }

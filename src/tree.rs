@@ -8,6 +8,7 @@ use tables::*;
 use game::*;
 use pins::*;
 use eval::*;
+use zobrist::*;
 
 const MAX_GAME_TREE_DEPTH: usize = 256;
 const MAX_CHESS_GAME_LENGTH: usize = 550;
@@ -36,6 +37,7 @@ impl SearchTree {
 
     pub fn new(new_game: Game) -> SearchTree {
         let mut new_move_stack = Vec::new();
+        new_move_stack.reserve(MAX_GAME_TREE_DEPTH);
         for _ in 0 .. MAX_GAME_TREE_DEPTH {
             new_move_stack.push(alloc_move_buffer());
         }
@@ -46,7 +48,6 @@ impl SearchTree {
         SearchTree {
             game: new_game,
             search_depth: 0,
-            // root_history: new_root_history,
             current_line: new_current_line,
             best_lines: Vec::new(),
             move_stack: new_move_stack,
@@ -90,11 +91,11 @@ impl SearchTree {
 
     // currently we unmake move by copy
     // OPTIMIZE: is this copying twice??? nail down rust copy/move semantics
-    pub fn unmake_move(&mut self, previous_game: &Game) {
+    pub fn unmake_move(&mut self, previous_game: Game) {
         debug_assert!(self.search_depth > 0);
         self.move_stack[self.search_depth].borrow_mut().clear();
         self.search_depth -= 1;
-        self.game = *previous_game;
+        self.game = previous_game;
         self.current_line.pop();
     }
 

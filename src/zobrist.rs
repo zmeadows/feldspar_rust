@@ -20,7 +20,7 @@ static mut ep_keys: [u64; 8] = [0; 8];
 impl Hash {
     pub fn change_piece(&mut self, color: Color, piece_type: PieceType, square: Square) {
         unsafe {
-            self.0 ^= piece_keys[2 * (piece_type as usize - 1) + (color as usize)][square.idx()];
+            self.0 ^= *piece_keys.get_unchecked(2 * (piece_type as usize - 1) + (color as usize)).get_unchecked(square.idx());
         }
     }
 
@@ -32,13 +32,13 @@ impl Hash {
 
     pub fn update_castling_rights(&mut self, rights: CastlingRights) {
         unsafe {
-            self.0 ^= castle_keys[rights.bits() as usize];
+            self.0 ^= *castle_keys.get_unchecked(rights.bits() as usize);
         }
     }
 
     pub fn modify_ep_square(&mut self, square: Square) {
         unsafe {
-            self.0 ^= ep_keys[square.file() as usize - 1];
+            self.0 ^= *ep_keys.get_unchecked(square.file() as usize - 1);
         }
     }
 
@@ -196,7 +196,7 @@ impl TableEntry {
 
 
 #[derive(Debug, Clone)]
-struct TranspositionTable {
+pub struct TranspositionTable {
     entries: Vec<TableEntry>
 }
 
@@ -236,12 +236,9 @@ impl SharedTranspositionTable {
 
     pub fn update(&self, hash: Hash, new_entry: EntryData) {
         let idx = (hash.unwrap() % self.len as u64) as isize;
-        let probed_entry = unsafe { self.entries.offset(idx).read_volatile() };
-        if probed_entry.entry.depth() < new_entry.depth() {
-            unsafe {
-                let new_table_entry = TableEntry::new(hash, new_entry);
-                self.entries.offset(idx).write_volatile(new_table_entry);
-            }
+        let new_table_entry = TableEntry::new(hash, new_entry);
+        unsafe {
+            self.entries.offset(idx).write_volatile(new_table_entry);
         }
     }
 }

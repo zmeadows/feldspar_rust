@@ -5,17 +5,20 @@ use moves::*;
 use search::*;
 use tree::*;
 use uci::*;
+use zobrist::*;
 
 use std::str::SplitWhitespace;
 
 pub struct Feldspar {
-    tree: SearchTree
+    tree: SearchTree,
+    table: TranspositionTable
 }
 
 impl Feldspar {
     pub fn new() -> Feldspar {
         Feldspar {
-            tree: SearchTree::new(Game::starting_position())
+            tree: SearchTree::new(Game::starting_position()),
+            table: TranspositionTable::new(5000000)
         }
     }
 }
@@ -26,7 +29,7 @@ impl UCIEngine for Feldspar {
 
     //TODO: print promotion type!
     fn find_best_move(&mut self) {
-        let (best_score, best_move) = alpha_beta(&mut self.tree, 6);
+        let (best_score, best_move) = alpha_beta(&mut self.tree, self.table.share(), 6);
 
         println!( "bestmove {}{}"
                 , best_move.from().to_algebraic()
