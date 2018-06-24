@@ -45,12 +45,11 @@ impl Bitboard {
             for x in row {
                 print!("{}", x.to_string().color("blue").on_color("white"));
             }
-            eprintln!();
+            println!();
         }
 
-        eprintln!();
+        println!();
     }
-
 }
 
 impl Board {

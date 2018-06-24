@@ -12,6 +12,7 @@ pub const RANK6: Bitboard = Bitboard::new(280375465082880);
 pub const RANK7: Bitboard = Bitboard::new(71776119061217280);
 pub const RANK8: Bitboard = Bitboard::new(18374686479671623680);
 
+
 // pub const FILE1: Bitboard = Bitboard::new(72340172838076673);
 // pub const FILE2: Bitboard = Bitboard::new(144680345676153346);
 // pub const FILE3: Bitboard = Bitboard::new(289360691352306692);
@@ -848,7 +849,7 @@ pub fn get_positive_ray(square: Square, dir: Direction, mut occupied: Bitboard) 
    occupied &= attacks;
    if occupied.nonempty() {
       let blocker_square = occupied.bitscan_forward();
-      return attacks ^ unsafe { 
+      return attacks ^ unsafe {
           *RAY_TABLE.get_unchecked(dir as usize)
                     .get_unchecked(blocker_square.idx())
       };
@@ -1001,3 +1002,180 @@ pub fn xray_bishop_attacks(occ: Bitboard, mut blockers: Bitboard, bishop_square:
    blockers &= attacks;
    return attacks ^ get_bishop_rays(bishop_square, occ ^ blockers);
 }
+
+// KOGGE STONE
+pub fn q_south_occl(mut gen: QuadBitboard, mut pro: Bitboard) -> QuadBitboard {
+   gen |= pro & (gen >> 8 );
+   pro &=       (pro >> 8 );
+   gen |= pro & (gen >> 16);
+   pro &=       (pro >> 16);
+   gen |= pro & (gen >> 32);
+   return gen;
+}
+
+pub fn q_north_occl(mut gen: QuadBitboard, mut pro: Bitboard) -> QuadBitboard {
+   gen |= pro & (gen <<  8);
+   pro &=       (pro <<  8);
+   gen |= pro & (gen << 16);
+   pro &=       (pro << 16);
+   gen |= pro & (gen << 32);
+   return gen;
+}
+
+pub fn q_east_occl(mut gen: QuadBitboard, mut pro: Bitboard) -> QuadBitboard {
+   pro &= NOTAFILE;
+   gen |= pro & (gen << 1);
+   pro &=       (pro << 1);
+   gen |= pro & (gen << 2);
+   pro &=       (pro << 2);
+   gen |= pro & (gen << 4);
+   return gen;
+}
+
+pub fn q_northeast_occl(mut gen: QuadBitboard, mut pro: Bitboard) -> QuadBitboard {
+   pro &= NOTAFILE;
+   gen |= pro & (gen <<  9);
+   pro &=       (pro <<  9);
+   gen |= pro & (gen << 18);
+   pro &=       (pro << 18);
+   gen |= pro & (gen << 36);
+   return gen;
+}
+
+pub fn q_southeast_occl(mut gen: QuadBitboard, mut pro: Bitboard) -> QuadBitboard {
+   pro &= NOTAFILE;
+   gen |= pro & (gen >>  7);
+   pro &=       (pro >>  7);
+   gen |= pro & (gen >> 14);
+   pro &=       (pro >> 14);
+   gen |= pro & (gen >> 28);
+   return gen;
+}
+
+pub fn q_west_occl(mut gen: QuadBitboard, mut pro: Bitboard) -> QuadBitboard {
+   pro &= NOTHFILE;
+   gen |= pro & (gen >> 1);
+   pro &=       (pro >> 1);
+   gen |= pro & (gen >> 2);
+   pro &=       (pro >> 2);
+   gen |= pro & (gen >> 4);
+   return gen;
+}
+
+pub fn q_southwest_occl(mut gen: QuadBitboard, mut pro: Bitboard) -> QuadBitboard {
+   pro &= NOTHFILE;
+   gen |= pro & (gen >>  9);
+   pro &=       (pro >>  9);
+   gen |= pro & (gen >> 18);
+   pro &=       (pro >> 18);
+   gen |= pro & (gen >> 36);
+   return gen;
+}
+
+pub fn q_northwest_occl(mut gen: QuadBitboard, mut pro: Bitboard) -> QuadBitboard {
+   pro &= NOTHFILE;
+   gen |= pro & (gen <<  7);
+   pro &=       (pro <<  7);
+   gen |= pro & (gen << 14);
+   pro &=       (pro << 14);
+   gen |= pro & (gen << 28);
+   return gen;
+}
+
+pub fn q_south_attacks     (rooks: QuadBitboard,   empty: Bitboard) -> QuadBitboard {return QuadBitboard::south_one ( q_south_occl ( rooks,   empty));}
+pub fn q_north_attacks     (rooks: QuadBitboard,   empty: Bitboard) -> QuadBitboard {return QuadBitboard::north_one ( q_north_occl ( rooks,   empty));}
+pub fn q_east_attacks      (rooks: QuadBitboard,   empty: Bitboard) -> QuadBitboard {return QuadBitboard::east_one ( q_east_occl ( rooks,   empty));}
+pub fn q_northeast_attacks (bishops: QuadBitboard, empty: Bitboard) -> QuadBitboard {return QuadBitboard::northeast_one ( q_northeast_occl ( bishops, empty));}
+pub fn q_southeast_attacks (bishops: QuadBitboard, empty: Bitboard) -> QuadBitboard {return QuadBitboard::southeast_one ( q_southeast_occl ( bishops, empty));}
+pub fn q_west_attacks      (rooks: QuadBitboard,   empty: Bitboard) -> QuadBitboard {return QuadBitboard::west_one ( q_west_occl ( rooks,   empty));}
+pub fn q_southwest_attacks (bishops: QuadBitboard, empty: Bitboard) -> QuadBitboard {return QuadBitboard::southwest_one ( q_southwest_occl ( bishops, empty));}
+pub fn q_northwest_attacks (bishops: QuadBitboard, empty: Bitboard) -> QuadBitboard {return QuadBitboard::northwest_one ( q_northwest_occl ( bishops, empty));}
+
+pub fn south_occl(mut gen: Bitboard, mut pro: Bitboard) -> Bitboard {
+   gen |= pro & (gen >> 8 );
+   pro &=       (pro >> 8 );
+   gen |= pro & (gen >> 16);
+   pro &=       (pro >> 16);
+   gen |= pro & (gen >> 32);
+   return gen;
+}
+
+pub fn north_occl(mut gen: Bitboard, mut pro: Bitboard) -> Bitboard {
+   gen |= pro & (gen <<  8);
+   pro &=       (pro <<  8);
+   gen |= pro & (gen << 16);
+   pro &=       (pro << 16);
+   gen |= pro & (gen << 32);
+   return gen;
+}
+
+pub fn east_occl(mut gen: Bitboard, mut pro: Bitboard) -> Bitboard {
+   pro &= NOTAFILE;
+   gen |= pro & (gen << 1);
+   pro &=       (pro << 1);
+   gen |= pro & (gen << 2);
+   pro &=       (pro << 2);
+   gen |= pro & (gen << 4);
+   return gen;
+}
+
+pub fn northeast_occl(mut gen: Bitboard, mut pro: Bitboard) -> Bitboard {
+   pro &= NOTAFILE;
+   gen |= pro & (gen <<  9);
+   pro &=       (pro <<  9);
+   gen |= pro & (gen << 18);
+   pro &=       (pro << 18);
+   gen |= pro & (gen << 36);
+   return gen;
+}
+
+pub fn southeast_occl(mut gen: Bitboard, mut pro: Bitboard) -> Bitboard {
+   pro &= NOTAFILE;
+   gen |= pro & (gen >>  7);
+   pro &=       (pro >>  7);
+   gen |= pro & (gen >> 14);
+   pro &=       (pro >> 14);
+   gen |= pro & (gen >> 28);
+   return gen;
+}
+
+pub fn west_occl(mut gen: Bitboard, mut pro: Bitboard) -> Bitboard {
+   pro &= NOTHFILE;
+   gen |= pro & (gen >> 1);
+   pro &=       (pro >> 1);
+   gen |= pro & (gen >> 2);
+   pro &=       (pro >> 2);
+   gen |= pro & (gen >> 4);
+   return gen;
+}
+
+pub fn southwest_occl(mut gen: Bitboard, mut pro: Bitboard) -> Bitboard {
+   pro &= NOTHFILE;
+   gen |= pro & (gen >>  9);
+   pro &=       (pro >>  9);
+   gen |= pro & (gen >> 18);
+   pro &=       (pro >> 18);
+   gen |= pro & (gen >> 36);
+   return gen;
+}
+
+pub fn northwest_occl(mut gen: Bitboard, mut pro: Bitboard) -> Bitboard {
+   pro &= NOTHFILE;
+   gen |= pro & (gen <<  7);
+   pro &=       (pro <<  7);
+   gen |= pro & (gen << 14);
+   pro &=       (pro << 14);
+   gen |= pro & (gen << 28);
+   return gen;
+}
+
+pub fn south_attacks     (rooks: Bitboard,   empty: Bitboard) -> Bitboard {return Bitboard::south_one ( south_occl ( rooks,   empty));}
+pub fn north_attacks     (rooks: Bitboard,   empty: Bitboard) -> Bitboard {return Bitboard::north_one ( north_occl ( rooks,   empty));}
+pub fn east_attacks      (rooks: Bitboard,   empty: Bitboard) -> Bitboard {return Bitboard::east_one ( east_occl ( rooks,   empty));}
+pub fn northeast_attacks (bishops: Bitboard, empty: Bitboard) -> Bitboard {return Bitboard::northeast_one ( northeast_occl ( bishops, empty));}
+pub fn southeast_attacks (bishops: Bitboard, empty: Bitboard) -> Bitboard {return Bitboard::southeast_one ( southeast_occl ( bishops, empty));}
+pub fn west_attacks      (rooks: Bitboard,   empty: Bitboard) -> Bitboard {return Bitboard::west_one ( west_occl ( rooks,   empty));}
+pub fn southwest_attacks (bishops: Bitboard, empty: Bitboard) -> Bitboard {return Bitboard::southwest_one ( southwest_occl ( bishops, empty));}
+pub fn northwest_attacks (bishops: Bitboard, empty: Bitboard) -> Bitboard {return Bitboard::northwest_one ( northwest_occl ( bishops, empty));}
+
+// https://chessprogramming.wikispaces.com/AVX2

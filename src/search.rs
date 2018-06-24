@@ -12,15 +12,16 @@ fn maxi(tree: &mut SearchTree, max_depth: usize, mut alpha: Score, beta: Score) 
 
     if tree.search_depth() == max_depth {
         let last_move = tree.last_move();
-        return (Score::recompute(&tree.focus(), tree.search_depth()), Move::null());
-        // if !tree.in_quiescence && (last_move.is_capture() || tree.focus().in_check()) {
+        return (Score::recompute(&tree.focus(), tree.search_depth()), last_move);
+        // if !tree.in_quiescence && last_move.is_capture() {
         //     tree.in_quiescence = true;
-        //     let (quiescence_score,_) = maxi(tree, usize::max_value(), alpha, beta);
+        //     let qdepth = tree.search_depth() + 15;
+        //     let (quiescence_score, mm) = maxi(tree, qdepth, alpha, beta);
         //     tree.in_quiescence = false;
         //     debug_assert!(last_move == tree.last_move());
         //     return (quiescence_score, last_move);
         // } else {
-        //     return (Score::recompute(&tree.focus()), last_move);
+        //     return (Score::recompute(&tree.focus(), tree.search_depth()), last_move);
         // }
     }
 
@@ -33,8 +34,7 @@ fn maxi(tree: &mut SearchTree, max_depth: usize, mut alpha: Score, beta: Score) 
 
         tree.make_move(*m);
         let (score, _) = mini(tree, max_depth, alpha, beta);
-        tree.unmake_move(game_copy);
-
+        tree.unmake_move(&game_copy);
 
         if score >= beta {
             return (beta, *m);   // fail hard beta-cutoff
@@ -57,15 +57,16 @@ fn mini(tree: &mut SearchTree, max_depth: usize, alpha: Score, mut beta: Score) 
 
     if tree.search_depth() == max_depth {
         let last_move = tree.last_move();
-        return (Score::recompute(&tree.focus(), tree.search_depth()), Move::null());
-        // if !tree.in_quiescence && (last_move.is_capture() || tree.focus().in_check()) {
+        return (Score::recompute(&tree.focus(), tree.search_depth()), last_move);
+        // if !tree.in_quiescence && last_move.is_capture() {
         //     tree.in_quiescence = true;
-        //     let (quiescence_score,_) = maxi(tree, usize::max_value(), alpha, beta);
+        //     let qdepth = tree.search_depth() + 15;
+        //     let (quiescence_score, mm) = mini(tree, qdepth, alpha, beta);
         //     tree.in_quiescence = false;
-        //     debug_assert!(last_move == tree.last_move());
+        //     assert!(last_move == tree.last_move());
         //     return (quiescence_score, last_move);
         // } else {
-        //     return (Score::recompute(&tree.focus()), last_move);
+        //     return (Score::recompute(&tree.focus(), tree.search_depth()), last_move);
         // }
     }
 
@@ -78,8 +79,7 @@ fn mini(tree: &mut SearchTree, max_depth: usize, alpha: Score, mut beta: Score) 
 
         tree.make_move(*m);
         let (score, _) = maxi(tree, max_depth, alpha, beta);
-        tree.unmake_move(game_copy);
-
+        tree.unmake_move(&game_copy);
 
         if score <= alpha {
             return (alpha, *m); // fail hard alpha-cutoff
@@ -96,8 +96,8 @@ fn mini(tree: &mut SearchTree, max_depth: usize, alpha: Score, mut beta: Score) 
 
 pub fn alpha_beta(tree: &mut SearchTree, max_depth: usize) -> (Score, Move) {
     match tree.focus().to_move {
-        Color::White => maxi(tree, max_depth, Score::infinity().flip(), Score::infinity()),
-        Color::Black => mini(tree, max_depth, Score::infinity().flip(), Score::infinity())
+        Color::White => maxi(tree, max_depth, Score::min(), Score::max()),
+        Color::Black => mini(tree, max_depth, Score::min(), Score::max())
     }
 }
 

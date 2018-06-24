@@ -32,10 +32,10 @@ impl Move {
                     ) -> Move
     {
         return Move(
-              ((moved_piece as u32 & 0x7) << 16)
-            | ((flag & 0xf) << 12)
-            | ((from.unwrap() & 0x3f) << 6)
-            | (to.unwrap() & 0x3f)
+              ((moved_piece as u32) << 16)
+            | (flag << 12)
+            | (from.unwrap() << 6)
+            | to.unwrap()
         );
     }
 
@@ -47,11 +47,11 @@ impl Move {
                       ) -> Move
     {
         return Move(
-              ((captured_piece as u32 & 0x7) << 19)
-            | ((moved_piece as u32 & 0x7) << 16)
-            | ((flag & 0xf) << 12)
-            | ((from.unwrap() & 0x3f) << 6)
-            | (to.unwrap() & 0x3f)
+              ((captured_piece as u32) << 19)
+            | ((moved_piece as u32) << 16)
+            | (flag << 12)
+            | (from.unwrap() << 6)
+            | to.unwrap()
         );
     }
 
@@ -64,11 +64,11 @@ impl Move {
                       , captured_piece: PieceType
                       ) -> Move
     {
-        let a = ((captured_piece as u32 & 0x7) << 19);
-        let b = ((moved_piece as u32 & 0x7) << 16);
-        let c = ((flag & 0xf) << 12);
-        let d = ((from.unwrap() & 0x3f) << 6);
-        let e = (to.unwrap() & 0x3f);
+        let a = ((captured_piece as u32) << 19);
+        let b = ((moved_piece as u32) << 16);
+        let c = ((flag) << 12);
+        let d = ((from.unwrap()) << 6);
+        let e = (to.unwrap());
 
         println!("{}", format!("{:32b}", a));
         println!("{}", format!("{:32b}", b));
@@ -89,7 +89,7 @@ impl Move {
     }
 
     pub fn flag(&self) -> u32 {
-        return (self.0 >> 12) & 0x0f;
+        return (self.0 >> 12) & 0xf;
     }
 
     pub fn is_capture(&self) -> bool {
@@ -113,6 +113,10 @@ impl Move {
 
     pub fn unwrap(&self) -> u32 {
         self.0
+    }
+
+    pub fn wrap(val: u32) -> Move {
+        Move(val)
     }
 
     pub fn null() -> Move {
@@ -160,7 +164,7 @@ mod test {
     #[test]
     fn bit_conversion() {
         // these are not legal/sensible moves, just testing bitwise wrap/unwrap consistency
-        for _ in 0 .. 100000 {
+        for _ in 0 .. 10000000 {
             let from = random_square();
             let to = random_square();
             let flag = random_flag();

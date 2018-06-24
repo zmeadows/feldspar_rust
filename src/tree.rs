@@ -40,9 +40,6 @@ impl SearchTree {
             new_move_stack.push(alloc_move_buffer());
         }
 
-        // let mut new_root_history = Vec::new();
-        // new_root_history.reserve(MAX_CHESS_GAME_LENGTH);
-
         let mut new_current_line = Vec::new();
         new_current_line.reserve(MAX_GAME_TREE_DEPTH);
 
@@ -78,28 +75,26 @@ impl SearchTree {
         self.search_depth += 1;
         self.move_stack[self.search_depth].borrow_mut().clear();
 
-        let l = self.current_line.len();
-        if l + 1 > 8 &&
-           self.current_line[l - 1] == self.current_line[l - 5] &&
-           self.current_line[l - 2] == self.current_line[l - 6] &&
-           self.current_line[l - 3] == self.current_line[l - 7]
-           // self.current_line[l - 4] == self.current_line[l - 8]
-        {
-            eprintln!("detected threefold repetition!");
-            m.print();
-            self.game.outcome == Some(GameResult::Draw);
-        }
+        // let l = self.current_line.len();
+        // if l + 1 > 8 &&
+        //    self.current_line[l - 1] == self.current_line[l - 5] &&
+        //    self.current_line[l - 2] == self.current_line[l - 6] &&
+        //    self.current_line[l - 3] == self.current_line[l - 7]
+        //    // self.current_line[l - 4] == self.current_line[l - 8]
+        // {
+        //     self.game.outcome == Some(GameResult::Draw);
+        // }
 
         //TODO: check for three-fold repetition here.
     }
 
     // currently we unmake move by copy
     // OPTIMIZE: is this copying twice??? nail down rust copy/move semantics
-    pub fn unmake_move(&mut self, previous_game: Game) {
+    pub fn unmake_move(&mut self, previous_game: &Game) {
         debug_assert!(self.search_depth > 0);
         self.move_stack[self.search_depth].borrow_mut().clear();
         self.search_depth -= 1;
-        self.game = previous_game;
+        self.game = *previous_game;
         self.current_line.pop();
     }
 

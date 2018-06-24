@@ -128,7 +128,7 @@ impl PerftContext {
             }
 
             self.go(max_depth);
-            self.tree.unmake_move(game_copy);
+            self.tree.unmake_move(&game_copy);
         }
     }
 }

@@ -5,6 +5,7 @@ use moves::*;
 use tables::*;
 use eval::*;
 use movegen::*;
+use zobrist::*;
 
 use std::str::SplitWhitespace;
 
@@ -24,7 +25,8 @@ pub struct Game {
     pub fullmoves: u16,
     pub king_danger_squares: Bitboard,
     pub king_attackers: Bitboard,
-    pub outcome: Option<GameResult>
+    pub outcome: Option<GameResult>,
+    pub hash: Hash
 }
 
 impl Game {
@@ -51,7 +53,8 @@ impl Game {
             fullmoves: 1,
             king_danger_squares: Bitboard::none_set(),
             king_attackers: Bitboard::none_set(),
-            outcome: None
+            outcome: None,
+            hash: Hash::empty()
         }
     }
 
@@ -235,10 +238,15 @@ impl Game {
         let king_square     = game.board.get_king_square(game.to_move);
         game.king_attackers = game.board.attackers(king_square, !game.to_move);
 
+        game.hash = Hash::new(&game);
+
         return Some(game);
     }
 
     pub fn make_move(&mut self, m: Move) {
+        use Color::*;
+        use PieceType::*;
+
         let from_sq        = m.from();
         let from_bit       = from_sq.bitrep();
         let to_sq          = m.to();
@@ -253,8 +261,11 @@ impl Game {
         let moved_piece    = Piece::new(moving_color, moved_ptype);
         let captured_ptype = m.captured_piece();
 
-        use Color::*;
-        use PieceType::*;
+        self.hash.change_piece(moving_color, moved_ptype, from_sq);
+        self.hash.change_piece(moving_color, moved_ptype, to_sq);
+
+        *self.board.get_pieces_mut(self.to_move, moved_ptype) ^= from_to_bit;
+        *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
 
         if is_capture {
             match to_sq.idx() {
@@ -265,22 +276,16 @@ impl Game {
                 _ => {}
             }
 
-            let captured_square =
-                if flag == EP_CAPTURE_FLAG {
-                    match opponent_color {
-                        White => Square::new(self.ep_square.unwrap().unwrap() + 8),
-                        Black => Square::new(self.ep_square.unwrap().unwrap() - 8)
-                    }
-                } else {
-                    to_sq
-                };
+            self.hash.change_piece(opponent_color, captured_ptype.unwrap(), to_sq);
+
+            if moved_ptype != Pawn {
+                *self.board.get_pieces_mut(opponent_color, captured_ptype.unwrap()) ^= to_bit;
+                *self.board.occupied_by_mut(opponent_color) ^= to_bit;
+            }
         }
 
         match moved_ptype {
             Pawn => {
-                *self.board.get_pieces_mut(self.to_move, Pawn) ^= from_to_bit;
-                *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
-
                 if flag == DOUBLE_PAWN_PUSH_FLAG {
                     self.ep_square = match moving_color {
                         White => Some(Square::new(to_sq.unwrap() - 8)),
@@ -307,98 +312,66 @@ impl Game {
 
                 if is_promotion {
                     *self.board.get_pieces_mut(moving_color, Pawn) &= !to_bit;
+                    self.hash.change_piece(moving_color, Pawn, to_sq);
 
                     if flag == KNIGHT_PROMO_FLAG || flag == KNIGHT_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Knight) |= to_bit;
-
-                        let promo_piece = Piece::new(moving_color, Knight);
+                        self.hash.change_piece(moving_color, Knight, to_sq);
 
                     } else if flag == BISHOP_PROMO_FLAG || flag == BISHOP_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Bishop) |= to_bit;
-
-                        let promo_piece = Piece::new(moving_color, Bishop);
+                        self.hash.change_piece(moving_color, Bishop, to_sq);
 
                     } else if flag == ROOK_PROMO_FLAG || flag == ROOK_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Rook) |= to_bit;
-
-                        let promo_piece = Piece::new(moving_color, Rook);
+                        self.hash.change_piece(moving_color, Rook, to_sq);
 
                     } else if flag == QUEEN_PROMO_FLAG || flag == QUEEN_PROMO_CAPTURE_FLAG {
                         *self.board.get_pieces_mut(moving_color, Queen) |= to_bit;
-
-                        let promo_piece = Piece::new(moving_color, Queen);
+                        self.hash.change_piece(moving_color, Queen, to_sq);
                     }
                 }
 
             },
 
-            Knight => {
-                *self.board.get_pieces_mut(self.to_move, Knight) ^= from_to_bit;
-                *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
-                if is_capture {
-                    *self.board.get_pieces_mut(opponent_color, captured_ptype.unwrap()) ^= to_bit;
-                    *self.board.occupied_by_mut(opponent_color) ^= to_bit;
-                }
-            },
-
-            Bishop => {
-                *self.board.get_pieces_mut(self.to_move, Bishop) ^= from_to_bit;
-                *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
-                if is_capture {
-                    *self.board.get_pieces_mut(opponent_color, captured_ptype.unwrap()) ^= to_bit;
-                    *self.board.occupied_by_mut(opponent_color) ^= to_bit;
-                }
-            },
-
             Rook => {
-                *self.board.get_pieces_mut(self.to_move, Rook) ^= from_to_bit;
-                *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
-
                 match moving_color {
                     White =>
                         if from_sq.idx() == 0 {
                             self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE);
+                            self.hash.remove_castling_rights(CastlingRights::WHITE_KINGSIDE);
                         } else if from_sq.idx() == 7 {
                             self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE);
+                            self.hash.remove_castling_rights(CastlingRights::WHITE_QUEENSIDE);
                         },
 
                     Black =>
                         if from_sq.idx() == 63 {
                             self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE);
+                            self.hash.remove_castling_rights(CastlingRights::BLACK_QUEENSIDE);
                         } else if from_sq.idx() == 56 {
                             self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE);
+                            self.hash.remove_castling_rights(CastlingRights::BLACK_KINGSIDE);
                         }
-                }
-
-                if is_capture {
-                    *self.board.get_pieces_mut(opponent_color, captured_ptype.unwrap()) ^= to_bit;
-                    *self.board.occupied_by_mut(opponent_color) ^= to_bit;
-                }
-            },
-
-            Queen => {
-                *self.board.get_pieces_mut(self.to_move, Queen) ^= from_to_bit;
-                *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
-                if is_capture {
-                    *self.board.get_pieces_mut(opponent_color, captured_ptype.unwrap()) ^= to_bit;
-                    *self.board.occupied_by_mut(opponent_color) ^= to_bit;
                 }
             },
 
             King => {
-                *self.board.get_pieces_mut(self.to_move, King) ^= from_to_bit;
-                *self.board.occupied_by_mut(self.to_move) ^= from_to_bit;
-
                 match moving_color {
                     White => {
-                        self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE);
-                        self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE);
+                        self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE | CastlingRights::WHITE_QUEENSIDE);
+                        self.hash.remove_castling_rights(CastlingRights::WHITE_KINGSIDE);
+                        self.hash.remove_castling_rights(CastlingRights::WHITE_QUEENSIDE);
+
                         if flag == KING_CASTLE_FLAG {
-                            let rook_bit = Square::new(0).bitrep() | Square::new(2).bitrep();
+                            let rook_old_sq = Square::new(0);
+                            let rook_new_sq = Square::new(2);
+                            let rook_bit = rook_old_sq.bitrep() | rook_new_sq.bitrep();
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
-                        }
-                        if flag == QUEEN_CASTLE_FLAG {
+                            self.hash.change_piece(moving_color, Rook, rook_old_sq);
+                            self.hash.change_piece(moving_color, Rook, rook_new_sq);
+                        } else if flag == QUEEN_CASTLE_FLAG {
                             let rook_bit = Square::new(7).bitrep() | Square::new(4).bitrep();
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
@@ -406,8 +379,9 @@ impl Game {
                     }
 
                     Black => {
-                        self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE);
-                        self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE);
+                        self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE | CastlingRights::BLACK_KINGSIDE);
+                        self.hash.remove_castling_rights(CastlingRights::BLACK_KINGSIDE);
+                        self.hash.remove_castling_rights(CastlingRights::BLACK_QUEENSIDE);
                         if flag == KING_CASTLE_FLAG {
                             let rook_bit = Square::new(56).bitrep() | Square::new(58).bitrep();
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
@@ -421,11 +395,9 @@ impl Game {
                     }
                 }
 
-                if is_capture {
-                    *self.board.get_pieces_mut(opponent_color, captured_ptype.unwrap()) ^= to_bit;
-                    *self.board.occupied_by_mut(opponent_color) ^= to_bit;
-                }
             },
+
+            _ => {}
         }
 
         if flag != DOUBLE_PAWN_PUSH_FLAG {
@@ -444,9 +416,13 @@ impl Game {
 
         self.to_move = !self.to_move;
 
+        if (self.to_move == Black) {
+            self.hash.update_black_to_move();
+        }
+
         let opp_king_square = self.board.get_king_square(opponent_color);
         self.king_attackers = self.board.attackers(opp_king_square, !self.to_move);
-        self.king_danger_squares = self.board.attacked(!self.to_move, true);
+        // self.king_danger_squares = self.board.attacked(!self.to_move, true);
 
         let can_move = can_move(self);
 
@@ -460,6 +436,8 @@ impl Game {
                      }
             }
         }
+
+        // assert!(self.hash == Hash::new(&self));
 
         //NOTE: only the three-fold repetition rule isn't account for here.
     }

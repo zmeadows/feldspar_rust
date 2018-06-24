@@ -47,10 +47,6 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
     let mut moves = buffer.borrow_mut();
     moves.clear();
 
-    // if game.outcome.is_some() {
-    //     return;
-    // }
-
     // OPTIMIZE: check if any of these can be moved below
     let friendly_color      = game.to_move;
     let opponent_color      = !friendly_color;
@@ -62,7 +58,7 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
     let king_attackers      = game.king_attackers;
     let check_multiplicity  = king_attackers.population();
     let in_check            = check_multiplicity > 0;
-    let king_danger_squares = game.king_danger_squares;
+    let king_danger_squares = game.board.attacked(opponent_color, true);
 
     //TODO: replace with Board::piece_at
     let opponent_pawns = game.board.get_pieces(opponent_color, Pawn);
@@ -101,14 +97,18 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
         // let king_moves = unsafe { *KING_TABLE.get_unchecked(king_square.idx()) };
         let king_moves = KING_TABLE[king_square.idx()];
 
+        if !captures_only {
             for to in king_moves & empty_squares & !king_danger_squares {
                 moves.add(Move::new_quiet(king_square, to, QUIET_FLAG, King));
             }
+        }
 
         for to in king_moves & opponent_pieces & !king_danger_squares {
             moves.add(Move::new_capture(king_square, to, CAPTURE_FLAG,
                                             King, opp_ptype_at(to)));
         }
+
+        return;
     }
 
     let mut capture_mask = Bitboard::all_set();
@@ -139,9 +139,11 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
     {
         let knight_moves = KNIGHT_TABLE[from.idx()];
 
+        if !captures_only {
             for to in knight_moves & empty_squares & quiet_mask {
                 moves.add( Move::new_quiet(from, to, QUIET_FLAG, Knight) );
             }
+        }
 
         for to in knight_moves & opponent_pieces & capture_mask {
             moves.add( Move::new_capture(from, to, CAPTURE_FLAG, Knight, opp_ptype_at(to)) );
@@ -152,6 +154,41 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
     /* BISHOPS */
     /***********/
 
+    // let bqs = game.board.bishops_queen(friendly_color) & !pinned;
+    // let qempty = QuadBitboard::splat( empty_squares.unwrap() );
+
+    // let mut att = QuadBitboard::splat(0);
+    // att |= northeast_attacks(bqs, qempty);
+    // att |= northwest_attacks(bqs, qempty);
+    // att |= southeast_attacks(bqs, qempty);
+    // att |= southwest_attacks(bqs, qempty);
+
+    // if !captures_only {
+    //     let b1 = bqs.extract(0);
+    //     if (b1 & !pinned).nonempty() {
+    //         let from = b1.bitscan_forward();
+    //         let b1att = att.extract(0);
+    //         for to in b1att & empty_squares & quiet_mask {
+    //             moves.add( Move::new_quiet(from, to, QUIET_FLAG, Bishop) );
+    //         }
+    //         for to in b1att & opponent_pieces & capture_mask {
+    //             moves.add( Move::new_capture(from, to, CAPTURE_FLAG, Bishop, opp_ptype_at(to)) );
+    //         }
+    //     }
+
+    //     let b2 = bqs.extract(1);
+    //     if (b2 & !pinned).nonempty() {
+    //         let from = b2.bitscan_forward();
+    //         let b2att = att.extract(1);
+    //         for to in b2att & empty_squares & quiet_mask {
+    //             moves.add( Move::new_quiet(from, to, QUIET_FLAG, Bishop) );
+    //         }
+    //         for to in b2att & opponent_pieces & capture_mask {
+    //             moves.add( Move::new_capture(from, to, CAPTURE_FLAG, Bishop, opp_ptype_at(to)) );
+    //         }
+    //     }
+    // }
+
     let friendly_bishops = game.board.get_pieces(friendly_color, Bishop);
 
     // UNPINNED
@@ -159,9 +196,11 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
     {
         let bishop_moves = get_bishop_rays(from, occupied_squares);
 
+        if !captures_only {
             for to in bishop_moves & empty_squares & quiet_mask {
                 moves.add( Move::new_quiet(from, to, QUIET_FLAG, Bishop) );
             }
+        }
 
         for to in bishop_moves & opponent_pieces & capture_mask {
             moves.add( Move::new_capture(from, to, CAPTURE_FLAG, Bishop, opp_ptype_at(to)) );
@@ -174,9 +213,11 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
         let bishop_moves = get_bishop_rays(from, occupied_squares)
             & pin_finder.diagonal_constraint(from);
 
+        if !captures_only {
             for to in bishop_moves & empty_squares & quiet_mask {
                 moves.add( Move::new_quiet(from, to, QUIET_FLAG, Bishop) );
             }
+        }
 
         for to in bishop_moves & opponent_pieces & capture_mask {
             moves.add( Move::new_capture(from, to, CAPTURE_FLAG, Bishop, opp_ptype_at(to)) );
@@ -195,9 +236,11 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
         let rook_moves = get_rook_rays(from, occupied_squares);
 
         /* quiets */
+        if !captures_only {
             for to in rook_moves & empty_squares & quiet_mask {
                 moves.add( Move::new_quiet(from, to, QUIET_FLAG, Rook) );
             }
+        }
 
         /* captures */
         for to in rook_moves & opponent_pieces & capture_mask {
@@ -212,9 +255,11 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
             & pin_finder.nondiagonal_constraint(from);
 
         /* quiets */
+        if !captures_only {
             for to in rook_moves & empty_squares & quiet_mask {
                 moves.add( Move::new_quiet(from, to, QUIET_FLAG, Rook) );
             }
+        }
 
         /* captures */
         for to in rook_moves & opponent_pieces & capture_mask {
@@ -233,9 +278,11 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
         let queen_moves = get_queen_rays(from, occupied_squares);
 
         /* quiets */
+        if !captures_only {
             for to in queen_moves & empty_squares & quiet_mask {
                 moves.add( Move::new_quiet(from, to, QUIET_FLAG, Queen) );
             }
+        }
 
         /* captures */
         for to in queen_moves & opponent_pieces & capture_mask {
@@ -251,9 +298,11 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
             & pin_finder.diagonal_constraint(from);
 
         /* quiets */
+        if !captures_only {
             for to in queen_moves & empty_squares & quiet_mask {
                 moves.add( Move::new_quiet(from, to, QUIET_FLAG, Queen) );
             }
+        }
 
         /* captures */
         for to in queen_moves & opponent_pieces & capture_mask {
@@ -267,9 +316,11 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
             & pin_finder.nondiagonal_constraint(from);
 
         /* quiets */
+        if !captures_only {
             for to in queen_moves & empty_squares & quiet_mask {
                 moves.add( Move::new_quiet(from, to, QUIET_FLAG, Queen) );
             }
+        }
 
         /* captures */
         for to in queen_moves & opponent_pieces & capture_mask {
@@ -296,7 +347,8 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
             advanceable_pawns.shifted_down() & empty_squares
         };
 
-        // single pushes (and promotions)
+    // single pushes (and promotions)
+    if !captures_only {
         for to in advanced_pawns & empty_squares & quiet_mask
         {
             let from = Square::new((to.unwrap() as i32 + delta_pawn_single_push) as u32);
@@ -335,6 +387,7 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
 
             moves.add(Move::new_quiet(from, to, DOUBLE_PAWN_PUSH_FLAG, Pawn));
         }
+    }
 
 
     //TODO: fix this mess
@@ -396,14 +449,15 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
     /* KING */
     /********/
 
-    let king_danger_squares = game.board.attacked(!game.to_move, true);
     let king_idx = king_square.idx();
     let king_moves = KING_TABLE[king_square.idx()];
 
     /* quiets */
+    if !captures_only {
         for to in king_moves & empty_squares & !king_danger_squares {
             moves.add( Move::new_quiet(king_square, to, QUIET_FLAG, King) );
         }
+    }
 
     /* captures */
     for to in king_moves & opponent_pieces & !king_danger_squares {
@@ -411,6 +465,7 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
     }
 
     /* castling */
+    if !captures_only {
         let has_kingside_castle_rights = match friendly_color {
             White => game.castling_rights.intersects(CastlingRights::WHITE_KINGSIDE),
             Black => game.castling_rights.intersects(CastlingRights::BLACK_KINGSIDE)
@@ -472,6 +527,7 @@ pub fn generate_moves(game: &Game, buffer: MoveBuffer, captures_only: bool) {
                     }
                 }
             }
+        }
     }
 }
 
@@ -583,7 +639,7 @@ pub fn can_move(game: &Game) -> bool {
     if check_multiplicity > 1 {
         // If the king is in double+ check, the only legal moves are
         // king moves, so we compute them and return early.
-        let king_danger_squares = game.king_danger_squares;
+        let king_danger_squares = game.board.attacked(opponent_color, true);
 
         let king_moves = unsafe { *KING_TABLE.get_unchecked(king_square.idx()) };
 
@@ -882,7 +938,7 @@ pub fn can_move(game: &Game) -> bool {
     /* KING */
     /********/
 
-    let king_danger_squares = game.king_danger_squares;
+    let king_danger_squares = game.board.attacked_flood(opponent_color, true);
     let king_moves = unsafe { *KING_TABLE.get_unchecked(king_square.idx()) };
 
     /* quiets */
