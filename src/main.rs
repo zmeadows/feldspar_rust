@@ -34,12 +34,13 @@ mod zobrist; use zobrist::*;
 mod tree; use tree::*;
 
 fn main() {
+    init_zobrist_hashing();
     // use Color::*;
     // use PieceType::*;
 
-    // init_zobrist_hashing();
 
-    // let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    g.board.print();
     // let mut tree = SearchTree::new(g);
     // g.board.print();
     // let (best_score, best_move) = alpha_beta(&mut tree, 5);
@@ -50,8 +51,8 @@ fn main() {
 
     // println!("{:?}", recompute_score(&g.board));
 
-    // let g = Game::starting_position();
-    // perft(g, 6);
+    //let g = Game::starting_position();
+    perft(g, 4);
 
     // let mut threads = Vec::new();
 

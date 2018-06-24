@@ -30,7 +30,7 @@ impl Hash {
         }
     }
 
-    pub fn remove_castling_rights(&mut self, rights: CastlingRights) {
+    pub fn update_castling_rights(&mut self, rights: CastlingRights) {
         unsafe {
             self.0 ^= castle_keys[rights.bits() as usize];
         }
@@ -263,14 +263,15 @@ mod test {
     #[test]
     fn bit_conversion() {
         // these are not sensible entries, just testing bitwise wrap/unwrap consistency
-        for _ in 0 .. 10000000 {
+        let mut entry_data = EntryData::empty();
+        for _ in 0 .. 1000 {
             let random_move = Move::wrap(rand::random::<u32>());
             let random_score = Score::new(rand::random::<i16>());
             let random_depth = thread_rng().gen_range(0,0x3f);
             let random_node_type = random_node_type();
             let random_age = thread_rng().gen_range(0,0xff) as u8;
 
-            let entry_data = EntryData::new(random_move, random_score, random_depth, random_node_type, random_age);
+            entry_data = EntryData::new(random_move, random_score, random_depth, random_node_type, random_age);
 
             assert!(entry_data.best_move() == random_move);
             assert!(entry_data.score() == random_score);

@@ -269,28 +269,51 @@ impl Game {
 
         if is_capture {
             match to_sq.idx() {
-                0 => self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE),
-                7 => self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE),
-                56 => self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE),
-                63 => self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE),
+                0 => {
+                    self.hash.update_castling_rights(self.castling_rights);
+                    self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE);
+                    self.hash.update_castling_rights(self.castling_rights);
+                }
+                7 => {
+                    self.hash.update_castling_rights(self.castling_rights);
+                    self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE);
+                    self.hash.update_castling_rights(self.castling_rights);
+                }
+                56 => {
+                    self.hash.update_castling_rights(self.castling_rights);
+                    self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE);
+                    self.hash.update_castling_rights(self.castling_rights);
+                }
+                63 => {
+                    self.hash.update_castling_rights(self.castling_rights);
+                    self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE);
+                    self.hash.update_castling_rights(self.castling_rights);
+                }
                 _ => {}
             }
 
-            self.hash.change_piece(opponent_color, captured_ptype.unwrap(), to_sq);
 
             if moved_ptype != Pawn {
                 *self.board.get_pieces_mut(opponent_color, captured_ptype.unwrap()) ^= to_bit;
                 *self.board.occupied_by_mut(opponent_color) ^= to_bit;
+                self.hash.change_piece(opponent_color, captured_ptype.unwrap(), to_sq);
             }
         }
 
         match moved_ptype {
             Pawn => {
+
                 if flag == DOUBLE_PAWN_PUSH_FLAG {
+                    if (self.ep_square.is_some()) {
+                        self.hash.modify_ep_square(self.ep_square.unwrap());
+                    }
+
                     self.ep_square = match moving_color {
                         White => Some(Square::new(to_sq.unwrap() - 8)),
                         Black => Some(Square::new(to_sq.unwrap() + 8))
-                    }
+                    };
+
+                    self.hash.modify_ep_square(self.ep_square.unwrap());
                 }
 
                 if is_capture {
@@ -302,11 +325,15 @@ impl Game {
                             Black => self.ep_square.unwrap().bitrep().shifted_up()
                         };
 
+                        let captured_sq = captured_bit.bitscan_forward();
+
                         *self.board.get_pieces_mut(opponent_color, Pawn) ^= captured_bit;
                         *self.board.occupied_by_mut(opponent_color) ^= captured_bit;
+                        self.hash.change_piece(opponent_color, captured_ptype.unwrap(), captured_sq);
                     } else {
                         *self.board.get_pieces_mut(opponent_color, captured_ptype.unwrap()) ^= to_bit;
                         *self.board.occupied_by_mut(opponent_color) ^= to_bit;
+                        self.hash.change_piece(opponent_color, captured_ptype.unwrap(), to_sq);
                     }
                 }
 
@@ -338,20 +365,24 @@ impl Game {
                 match moving_color {
                     White =>
                         if from_sq.idx() == 0 {
+                            self.hash.update_castling_rights(self.castling_rights);
                             self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE);
-                            self.hash.remove_castling_rights(CastlingRights::WHITE_KINGSIDE);
+                            self.hash.update_castling_rights(self.castling_rights);
                         } else if from_sq.idx() == 7 {
+                            self.hash.update_castling_rights(self.castling_rights);
                             self.castling_rights.remove(CastlingRights::WHITE_QUEENSIDE);
-                            self.hash.remove_castling_rights(CastlingRights::WHITE_QUEENSIDE);
+                            self.hash.update_castling_rights(self.castling_rights);
                         },
 
                     Black =>
                         if from_sq.idx() == 63 {
+                            self.hash.update_castling_rights(self.castling_rights);
                             self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE);
-                            self.hash.remove_castling_rights(CastlingRights::BLACK_QUEENSIDE);
+                            self.hash.update_castling_rights(self.castling_rights);
                         } else if from_sq.idx() == 56 {
+                            self.hash.update_castling_rights(self.castling_rights);
                             self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE);
-                            self.hash.remove_castling_rights(CastlingRights::BLACK_KINGSIDE);
+                            self.hash.update_castling_rights(self.castling_rights);
                         }
                 }
             },
@@ -359,39 +390,61 @@ impl Game {
             King => {
                 match moving_color {
                     White => {
-                        self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE | CastlingRights::WHITE_QUEENSIDE);
-                        self.hash.remove_castling_rights(CastlingRights::WHITE_KINGSIDE);
-                        self.hash.remove_castling_rights(CastlingRights::WHITE_QUEENSIDE);
-
                         if flag == KING_CASTLE_FLAG {
                             let rook_old_sq = Square::new(0);
                             let rook_new_sq = Square::new(2);
                             let rook_bit = rook_old_sq.bitrep() | rook_new_sq.bitrep();
+
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
+
                             self.hash.change_piece(moving_color, Rook, rook_old_sq);
                             self.hash.change_piece(moving_color, Rook, rook_new_sq);
+
                         } else if flag == QUEEN_CASTLE_FLAG {
-                            let rook_bit = Square::new(7).bitrep() | Square::new(4).bitrep();
+                            let rook_old_sq = Square::new(7);
+                            let rook_new_sq = Square::new(4);
+                            let rook_bit = rook_old_sq.bitrep() | rook_new_sq.bitrep();
+
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
+
+                            self.hash.change_piece(moving_color, Rook, rook_old_sq);
+                            self.hash.change_piece(moving_color, Rook, rook_new_sq);
                         }
+
+                        self.hash.update_castling_rights(self.castling_rights);
+                        self.castling_rights.remove(CastlingRights::WHITE_KINGSIDE | CastlingRights::WHITE_QUEENSIDE);
+                        self.hash.update_castling_rights(self.castling_rights);
                     }
 
                     Black => {
-                        self.castling_rights.remove(CastlingRights::BLACK_QUEENSIDE | CastlingRights::BLACK_KINGSIDE);
-                        self.hash.remove_castling_rights(CastlingRights::BLACK_KINGSIDE);
-                        self.hash.remove_castling_rights(CastlingRights::BLACK_QUEENSIDE);
                         if flag == KING_CASTLE_FLAG {
-                            let rook_bit = Square::new(56).bitrep() | Square::new(58).bitrep();
+                            let rook_old_sq = Square::new(56);
+                            let rook_new_sq = Square::new(58);
+                            let rook_bit = rook_old_sq.bitrep() | rook_new_sq.bitrep();
+
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
-                        }
-                        if flag == QUEEN_CASTLE_FLAG {
-                            let rook_bit = Square::new(63).bitrep() | Square::new(60).bitrep();
+
+                            self.hash.change_piece(moving_color, Rook, rook_old_sq);
+                            self.hash.change_piece(moving_color, Rook, rook_new_sq);
+
+                        } else if flag == QUEEN_CASTLE_FLAG {
+                            let rook_old_sq = Square::new(63);
+                            let rook_new_sq = Square::new(60);
+                            let rook_bit = rook_old_sq.bitrep() | rook_new_sq.bitrep();
+
                             *self.board.get_pieces_mut(self.to_move, Rook) ^= rook_bit;
                             *self.board.occupied_by_mut(self.to_move) ^= rook_bit;
+
+                            self.hash.change_piece(moving_color, Rook, rook_old_sq);
+                            self.hash.change_piece(moving_color, Rook, rook_new_sq);
                         }
+
+                        self.hash.update_castling_rights(self.castling_rights);
+                        self.castling_rights.remove(CastlingRights::BLACK_KINGSIDE | CastlingRights::BLACK_QUEENSIDE);
+                        self.hash.update_castling_rights(self.castling_rights);
                     }
                 }
 
@@ -401,7 +454,10 @@ impl Game {
         }
 
         if flag != DOUBLE_PAWN_PUSH_FLAG {
-            self.ep_square = None;
+            if (self.ep_square.is_some()) {
+                self.hash.modify_ep_square(self.ep_square.unwrap());
+                self.ep_square = None;
+            }
         }
 
         if is_capture || moved_ptype == Pawn {
@@ -415,10 +471,7 @@ impl Game {
         }
 
         self.to_move = !self.to_move;
-
-        if (self.to_move == Black) {
-            self.hash.update_black_to_move();
-        }
+        self.hash.update_black_to_move();
 
         let opp_king_square = self.board.get_king_square(opponent_color);
         self.king_attackers = self.board.attackers(opp_king_square, !self.to_move);
@@ -437,7 +490,13 @@ impl Game {
             }
         }
 
-        // assert!(self.hash == Hash::new(&self));
+        if self.hash != Hash::new(&self) {
+            m.print();
+            println!("{:?} {:?}", self.hash, Hash::new(&self));
+            self.board.print();
+            assert!(false);
+        }
+
 
         //NOTE: only the three-fold repetition rule isn't account for here.
     }
