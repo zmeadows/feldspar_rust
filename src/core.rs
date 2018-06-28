@@ -165,7 +165,13 @@ bitflags! {
     pub struct CastlingRights: u8 {
         const WHITE_KINGSIDE  = 0b0001;
         const WHITE_QUEENSIDE = 0b0010;
-        const BLACK_KINGSIDE  = 0b0100;
-        const BLACK_QUEENSIDE = 0b1000;
+        const BLACK_QUEENSIDE = 0b0100;
+        const BLACK_KINGSIDE  = 0b1000;
+    }
+}
+
+impl CastlingRights {
+    pub fn flip_color(self) -> CastlingRights {
+        CastlingRights::from_bits(self.bits().reverse_bits() >> 4).unwrap()
     }
 }

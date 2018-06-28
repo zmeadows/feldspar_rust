@@ -21,33 +21,32 @@ impl Board {
         }
     }
 
-    //TODO: make these iterators, to account for possibility of having multiple
     // queens or >2 bishops (from promotions)
-    pub fn bishops_queen(&self, color: Color) -> QuadBitboard {
-        let mut b = [0,0];
-        let mut i = 0;
+    // pub fn bishops_queen(&self, color: Color) -> QuadBitboard {
+    //     let mut b = [0,0];
+    //     let mut i = 0;
 
-        for x in self.get_pieces(color, PieceType::Bishop).split() {
-            b[i] = x.unwrap();
-            i += 1;
-        }
+    //     for x in self.get_pieces(color, PieceType::Bishop).split() {
+    //         b[i] = x.unwrap();
+    //         i += 1;
+    //     }
 
-        let q = self.get_pieces(color, PieceType::Queen).unwrap();
-        QuadBitboard::new(b[0], b[1], q, 0x0)
-    }
+    //     let q = self.get_pieces(color, PieceType::Queen).unwrap();
+    //     QuadBitboard::new(b[0], b[1], q, 0x0)
+    // }
 
-    pub fn rooks_queen(&self, color: Color) -> QuadBitboard {
-        let mut r = [0,0];
-        let mut i = 0;
+    // pub fn rooks_queen(&self, color: Color) -> QuadBitboard {
+    //     let mut r = [0,0];
+    //     let mut i = 0;
 
-        for x in self.get_pieces(color, PieceType::Rook).split() {
-            r[i] = x.unwrap();
-            i += 1;
-        }
+    //     for x in self.get_pieces(color, PieceType::Rook).split() {
+    //         r[i] = x.unwrap();
+    //         i += 1;
+    //     }
 
-        let q = self.get_pieces(color, PieceType::Queen).unwrap();
-        QuadBitboard::new(r[0], r[1], q, 0x0)
-    }
+    //     let q = self.get_pieces(color, PieceType::Queen).unwrap();
+    //     QuadBitboard::new(r[0], r[1], q, 0x0)
+    // }
 
     pub fn get_pieces(&self, color: Color, ptype: PieceType) -> Bitboard {
         let idx = 2 * (ptype as usize - 1) + color as usize;
@@ -265,5 +264,22 @@ impl Board {
         attacked |= west_attacks(rqs, empty_squares);
 
         return attacked;
+    }
+
+    pub fn flip_color(&mut self) {
+        use Color::*;
+
+        for ptype in PieceType::all() {
+            let white_bb = self.get_pieces(White, *ptype);
+            let black_bb = self.get_pieces(Black, *ptype);
+            *self.get_pieces_mut(White, *ptype) = black_bb.flip_color();
+            *self.get_pieces_mut(Black, *ptype) = white_bb.flip_color();
+        }
+
+        let white_occupied = self.occupied_by(White);
+        let black_occupied = self.occupied_by(Black);
+
+        *self.occupied_by_mut(White) = black_occupied.flip_color();
+        *self.occupied_by_mut(Black) = white_occupied.flip_color();
     }
 }

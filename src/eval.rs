@@ -133,7 +133,7 @@ impl Score {
 fn piece_square_value(color: Color, ptype: PieceType, sq: Square) -> (i16,i16) {
     let idx = match color {
         Color::White => 63 - sq.idx(),
-        Color::Black => 8 * (sq.idx() / 8) + 7 - sq.idx() % 8 as usize
+        Color::Black => 63 - sq.bitrep().flip_color().bitscan_forward().idx()
     };
 
     let sf = match color {
@@ -237,3 +237,22 @@ const KING_TABLE: [(i16,i16); 64] =
  ( 50   , 0  ) , ( 50   , 10 ) , ( 0   , 20 ) ,  ( 0   , 30 ) ,  ( 20   , 30 ) , ( 0   , 20 ) ,  ( 50   , 10 ) , ( 50   , 0  )
 ];
 
+#[cfg(test)]
+mod test {
+    use eval::*;
+
+    #[test]
+    fn flip() {
+        for _ in 0 .. 100000 {
+            let original_game = Game::random_game();
+            let mut flipped_game = original_game;
+            flipped_game.flip_color();
+            let original_score = Score::recompute(&original_game, 0);
+            let flipped_score = Score::recompute(&flipped_game, 0);
+            if original_score != flipped_score.flipped() {
+                original_game.board.print();
+                assert!(false, format!("{:?} {:?}", original_score, flipped_score));
+            }
+        }
+    }
+}

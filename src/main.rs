@@ -1,18 +1,20 @@
 #![feature(const_fn)]
+#![feature(reverse_bits)]
 #![allow(unused_imports)]
 #![feature(extern_prelude)]
 #![feature(stdsimd)]
 #![feature(iterator_step_by)]
+#![feature(plugin, custom_attribute)]
 
 #[macro_use] extern crate bitflags;
 #[macro_use] extern crate prettytable;
 extern crate num_cpus;
 extern crate rand;
 extern crate time;
-use time::PreciseTime;
 
-
+use std::fs::File;
 use std::thread;
+use time::PreciseTime;
 
 mod search; use search::*;
 mod bitboard; use bitboard::*;
@@ -35,15 +37,20 @@ mod tree; use tree::*;
 
 fn main() {
     init_zobrist_hashing();
-    // use Color::*;
-    // use PieceType::*;
+    use Color::*;
+    use PieceType::*;
 
-
-    let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    //let g = Game::random_game();
+    let g = Game::from_fen_str("bn2kbnr/2p1pppp/rp6/p2p2N1/QPP5/N2P1PP1/P3P1P1/R1B1KB1R b KQk - 2 9").unwrap();
+    println!("{}", g.to_fen());
     g.board.print();
+
     let mut tree = SearchTree::new(g);
-    let mut table = TranspositionTable::new(5000000);
-    negamax(&mut tree, 9, Score::min(), Score::max() ).1.print();
+    let mut table = TranspositionTable::new(200000000);
+    for i in 1..10 {
+        negamax(&mut tree, &mut table, i, Score::min(), Score::max() ).1.print();
+    }
+
     // g.board.print();
     // let (best_score, best_move) = alpha_beta(&mut tree, 5);
     // best_move.print();
@@ -56,14 +63,7 @@ fn main() {
     // let g = Game::starting_position();
     // perft(g, 6);
 
-    // let mut threads = Vec::new();
 
-    // for _ in 0 .. 10 {
-    //     let g = Game::starting_position();
-    //     threads.push(thread::spawn(move || {
-    //         perft(g, 6);
-    //     }));
-    // }
 
     // for x in threads {
     //     x.join();

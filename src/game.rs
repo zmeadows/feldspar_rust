@@ -8,6 +8,7 @@ use movegen::*;
 use zobrist::*;
 
 use std::str::SplitWhitespace;
+use rand::{thread_rng, Rng};
 
 #[derive(Debug,PartialEq,Clone, Copy)]
 pub enum GameResult {
@@ -15,7 +16,7 @@ pub enum GameResult {
     Draw
 }
 
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Clone, Copy)]
 pub struct Game {
     pub board: Board,
     pub to_move: Color,
@@ -23,7 +24,6 @@ pub struct Game {
     pub castling_rights: CastlingRights,
     pub halfmove_clock: u8,
     pub fullmoves: u16,
-    pub king_danger_squares: Bitboard,
     pub king_attackers: Bitboard,
     pub outcome: Option<GameResult>,
     pub hash: Hash
@@ -43,7 +43,6 @@ impl Game {
             castling_rights: CastlingRights::empty(),
             halfmove_clock: 0,
             fullmoves: 1,
-            king_danger_squares: Bitboard::none_set(),
             king_attackers: Bitboard::none_set(),
             outcome: None,
             hash: Hash::empty()
@@ -467,7 +466,6 @@ impl Game {
 
         let opp_king_square = self.board.get_king_square(opponent_color);
         self.king_attackers = self.board.attackers(opp_king_square, !self.to_move);
-        // self.king_danger_squares = self.board.attacked(!self.to_move, true);
 
         let can_move = can_move(self);
 
@@ -484,6 +482,55 @@ impl Game {
 
         //NOTE: only the three-fold repetition rule isn't account for here.
     }
+
+    pub fn random_game() -> Game {
+        let mut g = Game::starting_position();
+
+        for _ in 0 .. thread_rng().gen_range(0,80) {
+            match g.outcome {
+                Some(_) => break,
+                None => {}
+            }
+            let next_moves = next_moves_standalone(&g);
+            let num_moves = next_moves.len();
+            if num_moves == 1 {
+                g.make_move(next_moves.at(0));
+            } else {
+                let n = thread_rng().gen_range(0, num_moves - 1);
+                g.make_move(next_moves.at(n));
+            }
+        }
+
+        return g;
+    }
+
+    pub fn flip_color(&mut self) {
+        use PieceType::*;
+        use Color::*;
+
+        self.to_move = !self.to_move;
+        self.board.flip_color();
+        self.castling_rights = self.castling_rights.flip_color();
+
+        self.outcome = match self.outcome {
+            Some(GameResult::Win(color)) => Some(GameResult::Win(!color)),
+            Some(GameResult::Draw) => Some(GameResult::Draw),
+            None => None
+        };
+
+        if self.ep_square.is_some() {
+            let old_ep_square = self.ep_square.unwrap();
+            if self.to_move == White {
+                self.ep_square = Some(Square::new(old_ep_square.unwrap() - 3));
+            } else {
+                self.ep_square = Some(Square::new(old_ep_square.unwrap() + 3));
+            }
+        }
+
+        self.king_attackers = self.king_attackers.flip_color();
+
+        self.hash = Hash::new(self);
+    }
 }
 
 #[cfg(test)]
@@ -492,6 +539,7 @@ mod test {
 
     #[test]
     fn fen() {
+        //TODO: generate random games
         let fen_strings: Vec<&'static str> = vec![
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
             "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
@@ -510,6 +558,17 @@ mod test {
         for fen in fen_strings.iter() {
             let g = Game::from_fen_str(fen).unwrap();
             assert!(&g.to_fen() == fen);
+        }
+    }
+
+    #[test]
+    fn flip() {
+        for _ in 0 .. 100000 {
+            let mut flipped_game = Game::random_game();
+            let original_game = flipped_game;
+            flipped_game.flip_color();
+            flipped_game.flip_color();
+            assert!(flipped_game == original_game);
         }
     }
 }

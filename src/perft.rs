@@ -93,7 +93,7 @@ impl PerftContext {
             return;
         }
 
-        let next_moves = self.tree.next_moves();
+        let next_moves = self.tree.next_moves(None);
 
         for m in next_moves.borrow().iter() {
             let game_copy = *self.tree.focus();
@@ -166,7 +166,7 @@ pub fn perft(game: Game, depth: usize) -> PerftResult {
     pc.go(depth);
 
     let final_result = &pc.result;
-    
+
     let end_time = PreciseTime::now();
 
     let mut table = Table::new();
@@ -213,7 +213,7 @@ pub fn perft(game: Game, depth: usize) -> PerftResult {
         "#);
 
     game.board.print();
-    table.printstd();
+    table.print_tty(false);
 
     // println!("Threads used: {}", num_cpus);
     println!("Total Nodes Processed: {}", total_nodes);
@@ -223,11 +223,11 @@ pub fn perft(game: Game, depth: usize) -> PerftResult {
 }
 
 // pub fn perft_divide(game: Game, depth: usize) -> HashMap<String, u32> {
-// 
+//
 //     let mut move_gen = MoveGen::new();
 //     let move_buffer = move_gen.move_list(&game);
 //     let mut results = HashMap::new();
-// 
+//
 //     for m in &move_buffer {
 //         let mut game_copy = game.clone();
 //         game_copy.make_move(*m);
@@ -235,10 +235,10 @@ pub fn perft(game: Game, depth: usize) -> PerftResult {
 //         nc.go(1,depth-1);
 //         let mut f = m.from().to_algebraic();
 //         f.push_str(&m.to().to_algebraic());
-// 
+//
 //         results.insert(f, nc.node_count as u32);
 //     }
-// 
+//
 //     return results;
 // }
 

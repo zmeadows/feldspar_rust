@@ -18,7 +18,7 @@ impl Feldspar {
     pub fn new() -> Feldspar {
         Feldspar {
             tree: SearchTree::new(Game::starting_position()),
-            table: TranspositionTable::new(5000000)
+            table: TranspositionTable::new(50000000)
         }
     }
 }
@@ -29,7 +29,7 @@ impl UCIEngine for Feldspar {
 
     //TODO: print promotion type!
     fn find_best_move(&mut self) {
-        let (best_score, best_move) = alpha_beta(&mut self.tree, self.table.share(), 6);
+        let (best_score, best_move) = negamax(&mut self.tree, &mut self.table, 6, Score::min(), Score::max());
 
         println!( "bestmove {}{}"
                 , best_move.from().to_algebraic()

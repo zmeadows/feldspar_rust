@@ -89,6 +89,6 @@ impl Board {
 impl Move {
     //TODO: expand to print details (capture, ep, promotion, etc)
     pub fn print(&self) {
-        eprintln!("{}{}", self.from().to_algebraic(), self.to().to_algebraic());
+        println!("{}{}", self.from().to_algebraic(), self.to().to_algebraic());
     }
 }

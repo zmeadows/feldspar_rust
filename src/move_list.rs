@@ -31,13 +31,21 @@ impl MoveList {
     #[allow(dead_code)]
     pub fn at(&self, idx: usize) -> Move { return self.moves[idx]; }
 
-    pub fn sort(&mut self) {
+    pub fn sort(&mut self, best_move_candidate: Option<Move>) {
         self.moves[..self.count].sort_by(|m1, m2| {
+            if (best_move_candidate.is_some()) {
+                if (*m1 == best_move_candidate.unwrap()) {
+                    return Ordering::Less;
+                }
+                if (*m2 == best_move_candidate.unwrap()) {
+                    return Ordering::Greater;
+                }
+            }
             if m1.is_capture() && !m2.is_capture() {
                 return Ordering::Less;
             } else if !m1.is_capture() && m2.is_capture() {
                 return Ordering::Greater;
-            } else if m1.is_capture() && m2.is_capture() { 
+            } else if m1.is_capture() && m2.is_capture() {
                 let p1 = m1.captured_piece().unwrap();
                 let m1 = m1.moved_piece();
                 let p2 = m2.captured_piece().unwrap();

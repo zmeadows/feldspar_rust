@@ -193,17 +193,9 @@ impl TableEntry {
     }
 }
 
-
-
 #[derive(Debug, Clone)]
 pub struct TranspositionTable {
     entries: Vec<TableEntry>
-}
-
-#[derive(Debug, Clone)]
-pub struct SharedTranspositionTable {
-    entries: *mut TableEntry,
-    len: usize
 }
 
 impl TranspositionTable {
@@ -213,19 +205,10 @@ impl TranspositionTable {
         }
     }
 
-    pub fn share(&mut self) -> SharedTranspositionTable {
-        SharedTranspositionTable {
-            entries: self.entries.as_mut_ptr(),
-            len: self.entries.len()
-        }
-    }
-}
-
-impl SharedTranspositionTable {
     pub fn probe(&self, hash: Hash) -> Option<EntryData> {
-        let idx = (hash.unwrap() % self.len as u64) as isize;
+        let idx = (hash.unwrap() % self.entries.len() as u64) as usize;
 
-        let probed_entry = unsafe { self.entries.offset(idx).read_volatile() };
+        let probed_entry = unsafe { self.entries.get_unchecked(idx) };
 
         if (probed_entry.key.unwrap() ^ probed_entry.entry.unwrap() == hash.unwrap()) {
             return Some(probed_entry.entry);
@@ -234,11 +217,11 @@ impl SharedTranspositionTable {
         }
     }
 
-    pub fn update(&self, hash: Hash, new_entry: EntryData) {
-        let idx = (hash.unwrap() % self.len as u64) as isize;
+    pub fn update(&mut self, hash: Hash, new_entry: EntryData) {
+        let idx = (hash.unwrap() % self.entries.len() as u64) as usize;
         let new_table_entry = TableEntry::new(hash, new_entry);
         unsafe {
-            self.entries.offset(idx).write_volatile(new_table_entry);
+            *self.entries.get_unchecked_mut(idx) = new_table_entry;
         }
     }
 }

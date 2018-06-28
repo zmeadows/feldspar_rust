@@ -12,6 +12,8 @@ prettytable-rs = "^0.6"
 num_cpus = "1.0"
 time = "*"
 rand = "*"
+flame = "0.2.2"
+flamer = "^0.2.3"
 
 [profile.release]
 debug = true

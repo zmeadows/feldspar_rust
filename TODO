@@ -1,4 +1,7 @@
-find out why feldspar is not following forced mates it discovers
+https://github.com/racer-rust/racer
+
+make function to generate random game
+^^ and test symmetry of evaluation: (eval(game) == -eval(game.flipped()))
 
 save best line in GameTree
 
@@ -8,6 +11,8 @@ add quiscence search
 
 clean up make_move
 
+time management
+
 eventually: disable array bounds check everywhere that is well-tested
 
-test for search: play random games against self and count win/loss/draw count
+test for search/evaluation: play random games against self and count white win/black win/draw count

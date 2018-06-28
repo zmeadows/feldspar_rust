@@ -43,6 +43,10 @@ impl Bitboard {
     pub fn northwest_one (b: Bitboard) -> Bitboard {return (b << 7) & NOTHFILE;}
     pub fn south_one (b: Bitboard) -> Bitboard {return  b >> 8;}
     pub fn north_one (b: Bitboard) -> Bitboard {return  b << 8;}
+
+    pub fn flip_color(self) -> Bitboard {
+        return Bitboard(self.0.reverse_bits());
+    }
 }
 
 impl BitAnd for Bitboard {

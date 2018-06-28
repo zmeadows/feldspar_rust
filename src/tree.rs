@@ -55,7 +55,7 @@ impl SearchTree {
         }
     }
 
-    pub fn next_moves(&self) -> MoveBuffer {
+    pub fn next_moves(&self, best_move_candidate: Option<Move>) -> MoveBuffer {
         {
             let buf = self.move_stack[self.search_depth].clone();
             if self.in_quiescence {
@@ -64,7 +64,7 @@ impl SearchTree {
             } else {
                 generate_moves(&self.game, buf.clone(), false);
             }
-            buf.borrow_mut().sort();
+            buf.borrow_mut().sort(best_move_candidate);
         }
 
         self.move_stack[self.search_depth].clone()
