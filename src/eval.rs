@@ -45,6 +45,10 @@ impl Score {
         Score::new( (u as i32 + i16::min_value() as i32) as i16 )
     }
 
+    pub fn unwrap(self) -> i16 {
+        self.0
+    }
+
 }
 
 impl Phase {

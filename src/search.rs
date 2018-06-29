@@ -10,7 +10,8 @@ pub struct SearchContext {
     pub tree: SearchTree,
     pub qtree: SearchTree,
     pub table: TranspositionTable,
-    pub timer: SearchTimer
+    pub timer: SearchTimer,
+    pub ran_out_of_time: bool
 }
 
 pub fn negamax(context: &mut SearchContext, depth_left: u8, mut alpha: Score, mut beta: Score) -> (Score, Move) {
@@ -72,6 +73,7 @@ pub fn negamax(context: &mut SearchContext, depth_left: u8, mut alpha: Score, mu
         }
 
         if context.timer.finished() {
+            context.ran_out_of_time = true;
             return (best_value, best_move);
         }
     }

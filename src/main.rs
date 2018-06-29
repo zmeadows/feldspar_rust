@@ -39,12 +39,12 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
-    let g = Game::starting_position();
-    let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    // let g = Game::starting_position();
+    //let g = Game::from_fen_str("8/1p5p/1p3k2/2n3p1/2PN2P1/P3r2P/1P4K1/5R2 b - - 5 41").unwrap();
     //let g = Game::random_game();
     //let g = Game::from_fen_str("5bk1/2R1pp2/6p1/3PP2p/P3B3/5P1P/1r2K3/8 w - - 7 43").unwrap();
     //println!("{}", g.to_fen());
-    //g.board.print();
+    // g.board.print();
 
     // let mut tmp_tree = SearchTree::new(g);
     // let mut tmp_qtree = SearchTree::new(g);
@@ -54,13 +54,17 @@ fn main() {
     // let mut context = SearchContext {
     //     tree: tmp_tree,
     //     qtree: tmp_qtree,
-    //     table: tmp_table
+    //     table: tmp_table,
+    //     timer: SearchTimer::new(300)
     // };
 
-    // for i in 1..10 {
+    // for i in 1..15 {
     //      let (s,m) = negamax(&mut context, i, Score::min(), Score::max() );
-    //      print!("depth {}, move: ", i);
     //      m.print();
+    //      //let best_move = context.table.get_pv(*context.tree.focus())[0];
+    //      if context.timer.finished() {
+    //          break;
+    //      }
     // }
 
     // g.board.print();
@@ -73,7 +77,7 @@ fn main() {
     // println!("{:?}", recompute_score(&g.board));
 
     // let g = Game::starting_position();
-    perft(g, 5);
+    // perft(g, 5);
 
 
 
@@ -91,7 +95,7 @@ fn main() {
     //     game_copy.board.print();
     // }
 
-    // let mut f = Feldspar::new();
-    // f.run();
+    let mut f = Feldspar::new();
+    f.run();
 
 }

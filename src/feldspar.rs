@@ -28,7 +28,8 @@ impl Feldspar {
             tree: tmp_tree,
             qtree: tmp_qtree,
             table: tmp_table,
-            timer: SearchTimer::new(3000)
+            timer: SearchTimer::new(3000),
+            ran_out_of_time: false
         };
 
         Feldspar {
@@ -61,27 +62,39 @@ impl UCIEngine for Feldspar {
             opp_inc = winc;
         }
 
-        if my_time + my_inc > opp_time {
-            self.context.timer = SearchTimer::new(my_time + my_inc - opp_time);
+        if my_time > opp_time {
+            self.context.timer = SearchTimer::new(my_time - opp_time);
         } else {
-            self.context.timer = SearchTimer::new( max(my_time/30, 100) );
+            self.context.timer = SearchTimer::new( max(my_time/40, 500) );
         }
 
-        for i in 0 .. 100 {
-            negamax( &mut self.context, i, Score::min(), Score::max() );
-            if self.context.timer.finished() {
+        let mut depth_reached = 0;
+        let mut best_move = Move::null();
+        let mut best_score = Score::min();
+        for i in 1 .. 100 {
+            let (s,m) = negamax( &mut self.context, i, Score::min(), Score::max() );
+            if !self.context.ran_out_of_time {
+                best_move = m;
+                best_score = s;
+                depth_reached = i;
+            } else {
                 break;
             }
         }
 
-        let best_move = self.context.table.get_pv(*self.context.tree.focus())[0];
-        self.context.table.reset();
+        let best_move = self.context.table.get_pv(*self.context.tree.focus(), depth_reached as usize)[0];
+
+        match self.context.tree.focus().to_move {
+            Color::White => eprintln!("score: {:?}", (best_score.unwrap() as f32)/100.0),
+            Color::Black => eprintln!("score: {:?}", (best_score.flipped().unwrap() as f32)/100.0)
+        }
 
         println!( "bestmove {}{}"
                 , best_move.from().to_algebraic()
                 , best_move.to().to_algebraic()
                 );
 
+        self.context.ran_out_of_time = false;
 
         //TODO: ponder while opponent thinks
     }
