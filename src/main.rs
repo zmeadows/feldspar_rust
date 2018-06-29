@@ -39,6 +39,8 @@ fn main() {
     use Color::*;
     use PieceType::*;
 
+    let g = Game::starting_position();
+    let g = Game::from_fen_str("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
     //let g = Game::random_game();
     //let g = Game::from_fen_str("5bk1/2R1pp2/6p1/3PP2p/P3B3/5P1P/1r2K3/8 w - - 7 43").unwrap();
     //println!("{}", g.to_fen());
@@ -71,7 +73,7 @@ fn main() {
     // println!("{:?}", recompute_score(&g.board));
 
     // let g = Game::starting_position();
-    // perft(g, 6);
+    perft(g, 5);
 
 
 
@@ -89,7 +91,7 @@ fn main() {
     //     game_copy.board.print();
     // }
 
-    let mut f = Feldspar::new();
-    f.run();
+    // let mut f = Feldspar::new();
+    // f.run();
 
 }
