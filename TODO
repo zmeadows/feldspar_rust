@@ -1,18 +1,11 @@
-https://github.com/racer-rust/racer
-
-make function to generate random game
-^^ and test symmetry of evaluation: (eval(game) == -eval(game.flipped()))
-
-save best line in GameTree
-
-don't test for promotion during every pawn move check, do separate for loop
-
-add quiscence search
-
-clean up make_move
-
 time management
 
-eventually: disable array bounds check everywhere that is well-tested
+add checks to quiescence search
+
+improve evaluation with mobility
+
+https://github.com/racer-rust/racer
+
+clean up make_move
 
 test for search/evaluation: play random games against self and count white win/black win/draw count

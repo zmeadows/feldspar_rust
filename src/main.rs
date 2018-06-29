@@ -10,11 +10,10 @@
 #[macro_use] extern crate prettytable;
 extern crate num_cpus;
 extern crate rand;
-extern crate time;
+extern crate chrono;
 
 use std::fs::File;
 use std::thread;
-use time::PreciseTime;
 
 mod search; use search::*;
 mod bitboard; use bitboard::*;
@@ -41,15 +40,26 @@ fn main() {
     use PieceType::*;
 
     //let g = Game::random_game();
-    let g = Game::from_fen_str("bn2kbnr/2p1pppp/rp6/p2p2N1/QPP5/N2P1PP1/P3P1P1/R1B1KB1R b KQk - 2 9").unwrap();
-    println!("{}", g.to_fen());
-    g.board.print();
+    //let g = Game::from_fen_str("5bk1/2R1pp2/6p1/3PP2p/P3B3/5P1P/1r2K3/8 w - - 7 43").unwrap();
+    //println!("{}", g.to_fen());
+    //g.board.print();
 
-    let mut tree = SearchTree::new(g);
-    let mut table = TranspositionTable::new(200000000);
-    for i in 1..10 {
-        negamax(&mut tree, &mut table, i, Score::min(), Score::max() ).1.print();
-    }
+    // let mut tmp_tree = SearchTree::new(g);
+    // let mut tmp_qtree = SearchTree::new(g);
+    // tmp_qtree.in_quiescence = true;
+    // let mut tmp_table = TranspositionTable::new(20000000);
+
+    // let mut context = SearchContext {
+    //     tree: tmp_tree,
+    //     qtree: tmp_qtree,
+    //     table: tmp_table
+    // };
+
+    // for i in 1..10 {
+    //      let (s,m) = negamax(&mut context, i, Score::min(), Score::max() );
+    //      print!("depth {}, move: ", i);
+    //      m.print();
+    // }
 
     // g.board.print();
     // let (best_score, best_move) = alpha_beta(&mut tree, 5);
@@ -79,7 +89,7 @@ fn main() {
     //     game_copy.board.print();
     // }
 
-    // let mut f = Feldspar::new();
-    // f.run();
+    let mut f = Feldspar::new();
+    f.run();
 
 }

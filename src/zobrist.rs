@@ -224,6 +224,35 @@ impl TranspositionTable {
             *self.entries.get_unchecked_mut(idx) = new_table_entry;
         }
     }
+
+    pub fn reset(&mut self) {
+        for x in self.entries.iter_mut() {
+            x.key = Key::empty();
+            x.entry = EntryData::empty();
+        }
+    }
+
+    pub fn get_pv(&self, mut game: Game) -> Vec<Move> {
+        let mut variation = Vec::new();
+
+        loop {
+            match self.probe(game.hash) {
+                None => break,
+                Some(tentry) => {
+                    let best_move = tentry.best_move();
+                    variation.push(best_move);
+                    match tentry.node_type() {
+                        NodeType::PV => eprintln!("variation PV"),
+                        NodeType::All => eprintln!("variation All"),
+                        NodeType::Cut => eprintln!("variation Cut")
+                    }
+                    game.make_move(best_move);
+                }
+            }
+        }
+
+        return variation;
+    }
 }
 
 #[cfg(test)]

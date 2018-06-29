@@ -1,12 +1,45 @@
 use std::ops::Not;
 use std::slice::Iter;
 use std::str::Chars;
+use chrono::prelude::*;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Direction { N, S, E, W, NE, NW, SE, SW }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Square(u32);
+
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct SearchTimer {
+    start_time: i64,
+    duration_ms: i64
+}
+
+impl SearchTimer {
+    pub fn new(search_length: u32) -> SearchTimer {
+        SearchTimer {
+            start_time: Utc::now().timestamp_millis(),
+            duration_ms: search_length as i64
+        }
+    }
+
+    pub fn finished(&self) -> bool {
+        Utc::now().timestamp_millis() - self.start_time > self.duration_ms
+    }
+}
+
+pub struct Counter(i64);
+
+impl Counter {
+    pub fn new() -> Counter {
+        Counter(Utc::now().timestamp_millis())
+    }
+
+    pub fn elapsed_ms(self) -> f64 {
+        (Utc::now().timestamp_millis() - self.0) as f64
+    }
+}
 
 impl Square {
     pub fn new(idx: u32) -> Square {

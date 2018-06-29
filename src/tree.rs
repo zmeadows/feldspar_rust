@@ -16,7 +16,7 @@ const MAX_CHESS_GAME_LENGTH: usize = 550;
 pub struct SearchTree {
     game: Game,
     search_depth: usize,
-    current_line: Vec<Move>,
+    pub current_line: Vec<Move>,
     best_lines: Vec<(Score,MoveList)>,
     move_stack: Vec<MoveBuffer>,
     pub in_quiescence: bool
@@ -99,10 +99,10 @@ impl SearchTree {
         self.current_line.pop();
     }
 
-    pub fn reset_root(&mut self, new_game: Game, moves: Vec<Move>) {
+    pub fn reset_root(&mut self, new_game: Game) {
         self.game = new_game;
         self.search_depth = 0;
-        self.current_line = moves;
+        self.current_line.clear();
 
         for (_, buf) in self.move_stack.iter().enumerate() {
             buf.borrow_mut().clear();

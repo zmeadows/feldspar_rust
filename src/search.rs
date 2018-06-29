@@ -6,14 +6,20 @@ use tree::*;
 use eval::*;
 use zobrist::*;
 
-//TODO: fix cut/all nodes and make sure you understand them.
-pub fn negamax(tree: &mut SearchTree, table: &mut TranspositionTable, depth_left: u8, mut alpha: Score, mut beta: Score) -> (Score, Move) {
+pub struct SearchContext {
+    pub tree: SearchTree,
+    pub qtree: SearchTree,
+    pub table: TranspositionTable,
+    pub timer: SearchTimer
+}
+
+pub fn negamax(context: &mut SearchContext, depth_left: u8, mut alpha: Score, mut beta: Score) -> (Score, Move) {
 
     let alpha_orig = alpha;
 
     let mut best_move_candidate = None;
 
-    match table.probe(tree.focus().hash) {
+    match context.table.probe(context.tree.focus().hash) {
         None => {},
         Some(tentry) => {
             best_move_candidate = Some(tentry.best_move());
@@ -32,27 +38,27 @@ pub fn negamax(tree: &mut SearchTree, table: &mut TranspositionTable, depth_left
         }
     }
 
-    if depth_left == 0 || tree.focus().outcome.is_some() {
-        let s = Score::recompute(&tree.focus(), tree.search_depth());
+    if depth_left == 0 || context.tree.focus().outcome.is_some() {
+        //OPTIMIZE: this copy is not necessary
+        context.qtree.reset_root(*context.tree.focus());
+        let (qscore, _) = quiescence(&mut context.qtree, alpha, beta);
 
-        return match tree.focus().to_move {
-            Color::White => return (s, tree.last_move()),
-            Color::Black => return (s.flipped(), tree.last_move())
-        }
+        return (qscore, Move::null());
     }
 
     let mut best_move = Move::null();
     let mut best_value = Score::min();
-    let next_moves = tree.next_moves(best_move_candidate);
+    let next_moves = context.tree.next_moves(best_move_candidate);
 
     for m in next_moves.borrow().iter() {
-        let game_copy = *tree.focus();
+        let game_copy = *context.tree.focus();
 
-        tree.make_move(*m);
-        let (s1,mb) = negamax(tree, table, depth_left - 1, beta.flipped(), alpha.flipped());
-        tree.unmake_move(game_copy);
+        context.tree.make_move(*m);
+        let (s1,mb) = negamax(context, depth_left - 1, beta.flipped(), alpha.flipped());
         let s2 = s1.flipped();
-        if (s2 > best_value) {
+        context.tree.unmake_move(game_copy);
+
+        if (s2 > best_value || best_move == Move::null()) {
             best_move = *m;
             best_value = s2;
         }
@@ -63,6 +69,10 @@ pub fn negamax(tree: &mut SearchTree, table: &mut TranspositionTable, depth_left
 
         if alpha >= beta {
             break;
+        }
+
+        if context.timer.finished() {
+            return (best_value, best_move);
         }
     }
 
@@ -79,10 +89,45 @@ pub fn negamax(tree: &mut SearchTree, table: &mut TranspositionTable, depth_left
             best_value,
             depth_left,
             new_node_type,
-            (tree.focus().fullmoves % 255) as u8
+            (context.tree.focus().fullmoves % 255) as u8
         );
 
-    table.update(tree.focus().hash, new_tentry);
+    context.table.update(context.tree.focus().hash, new_tentry);
 
     return (best_value, best_move);
+}
+
+pub fn quiescence(tree: &mut SearchTree, mut alpha: Score, mut beta: Score) -> (Score, Move) {
+    debug_assert!(tree.in_quiescence);
+
+    let stand_pat = Score::recompute_symmetric(&tree.focus(), tree.search_depth());
+
+    if stand_pat >= beta {
+        return (beta, Move::null());
+    }
+
+    if alpha < stand_pat {
+        alpha = stand_pat;
+    }
+
+    let next_moves = tree.next_moves(None);
+
+    for m in next_moves.borrow().iter() {
+        let game_copy = *tree.focus();
+
+        tree.make_move(*m);
+        let (s1,_) = quiescence(tree, beta.flipped(), alpha.flipped());
+        tree.unmake_move(game_copy);
+        let s2 = s1.flipped();
+
+        if s2 >= beta {
+            return (beta, Move::null());
+        }
+
+        if s2 > alpha {
+            alpha = s2;
+        }
+    }
+
+    return (alpha, Move::null());
 }

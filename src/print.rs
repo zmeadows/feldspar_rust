@@ -88,7 +88,8 @@ impl Board {
 
 impl Move {
     //TODO: expand to print details (capture, ep, promotion, etc)
+    //TODO: UCI print output vs. normal print different functions
     pub fn print(&self) {
-        println!("{}{}", self.from().to_algebraic(), self.to().to_algebraic());
+        eprintln!("{}{}", self.from().to_algebraic(), self.to().to_algebraic());
     }
 }

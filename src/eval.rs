@@ -77,6 +77,13 @@ impl Phase {
 
 
 impl Score {
+    pub fn recompute_symmetric(game: &Game, search_depth: usize) -> Score {
+        match game.to_move {
+            Color::White => Score::recompute(game, search_depth),
+            Color::Black => Score::recompute(game, search_depth).flipped(),
+        }
+    }
+
     pub fn recompute(game: &Game, search_depth: usize) -> Score {
         use PieceType::*;
         use Color::*;

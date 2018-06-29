@@ -15,7 +15,6 @@ use std::thread;
 use std::ops::Add;
 use std::os;
 use std::process::Command;
-use time::PreciseTime;
 
 use prettytable::Table;
 use prettytable::cell::Cell;
@@ -138,7 +137,7 @@ pub fn perft(game: Game, depth: usize) -> PerftResult {
     // let num_cpus = num_cpus::get() - 2;
     // let mut threads = Vec::new();
 
-    let start_time = PreciseTime::now();
+    let start_time = Counter::new();
 
     // for move_subset in next_moves_standalone_chunked(&game, num_cpus) {
 
@@ -166,8 +165,6 @@ pub fn perft(game: Game, depth: usize) -> PerftResult {
     pc.go(depth);
 
     let final_result = &pc.result;
-
-    let end_time = PreciseTime::now();
 
     let mut table = Table::new();
     table.add_row(row![
@@ -217,7 +214,7 @@ pub fn perft(game: Game, depth: usize) -> PerftResult {
 
     // println!("Threads used: {}", num_cpus);
     println!("Total Nodes Processed: {}", total_nodes);
-    println!("MNodes/Sec: {:.2}", 1e-6 * total_nodes as f64 / (start_time.to(end_time).num_milliseconds() as f64 / 1000.0));
+    println!("MNodes/Sec: {:.2}", 1e-6 * total_nodes as f64 / (start_time.elapsed_ms() / 1000.0));
 
     return final_result.clone();
 }

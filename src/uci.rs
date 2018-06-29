@@ -11,9 +11,8 @@ pub trait UCIEngine {
     fn author(&self) -> &'static str;
     fn init(&mut self) -> () {}
     fn reset(&mut self) -> () {}
-    fn find_best_move(&mut self) -> ();
     fn replace_game(&mut self, new_game: Game, moves_played: Vec<Move>);
-    //fn find_best_move(&mut self, wtime: usize, btime: usize, winc: usize, binc: usize, movestogo: usize) -> ();
+    fn find_best_move(&mut self, wtime: u32, btime: u32, winc: u32, binc: u32) -> ();
     // fn infinite_search(&mut self) -> ();
 
     //TODO: move to UCIEngine trait default implementation
@@ -33,7 +32,10 @@ pub trait UCIEngine {
 
         match args.next() {
             Some("moves") => {},
-            _ => return
+            _ => {
+                self.replace_game(g, Vec::new());
+                return
+            }
         }
 
         let mut moves = Vec::new();
@@ -50,6 +52,30 @@ pub trait UCIEngine {
         eprintln!("FEN re-created by feldspar: {}", g.to_fen());
 
         self.replace_game(g, moves);
+    }
+
+    fn parse_go_cmd<'a>(&mut self, args: &mut SplitWhitespace<'a>) {
+
+        let mut wtime = 0;
+        let mut btime = 0;
+        let mut winc = 0;
+        let mut binc = 0;
+
+        loop {
+            match args.next() {
+                Some("wtime") => wtime = args.next().unwrap().parse().unwrap(),
+                Some("btime") => btime = args.next().unwrap().parse().unwrap(),
+                Some("winc") => winc = args.next().unwrap().parse().unwrap(),
+                Some("binc") => binc = args.next().unwrap().parse().unwrap(),
+                Some(_) => break,
+                None => break
+            }
+        }
+
+        eprintln!("TIMES: {} {} {} {}", wtime, btime, winc, binc);
+
+        self.find_best_move(wtime, btime, winc, binc);
+
     }
 
     fn run(&mut self) -> () {
@@ -75,7 +101,7 @@ pub trait UCIEngine {
                     "ucinewgame" => self.reset(),
                     "position"   => self.update_position(&mut params),
                     "quit"       => return,
-                    "go"         => self.find_best_move(),
+                    "go"         => self.parse_go_cmd(&mut params),
                     _ => println!("Un-used command from GUI/server: {}", first_word)
                 }
             }
