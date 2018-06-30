@@ -72,6 +72,12 @@ impl SearchTree {
         self.move_stack[self.search_depth].clone()
     }
 
+    pub fn make_null_move(&mut self) {
+        self.game.make_null_move();
+        self.search_depth += 1;
+        self.move_stack[self.search_depth].borrow_mut().clear();
+    }
+
     pub fn make_move(&mut self, m: Move) {
         self.game.make_move(m);
         self.current_line.push(m);
@@ -93,17 +99,14 @@ impl SearchTree {
             self.root_history.push(self.game.hash);
         }
 
-        // let l = self.current_line.len();
-        // if l + 1 > 8 &&
-        //    self.current_line[l - 1] == self.current_line[l - 5] &&
-        //    self.current_line[l - 2] == self.current_line[l - 6] &&
-        //    self.current_line[l - 3] == self.current_line[l - 7]
-        //    // self.current_line[l - 4] == self.current_line[l - 8]
-        // {
-        //     self.game.outcome == Some(GameResult::Draw);
-        // }
-
         //TODO: check for three-fold repetition here.
+    }
+
+    pub fn unmake_null_move(&mut self, previous_game: Game) {
+        debug_assert!(self.search_depth > 0);
+        self.move_stack[self.search_depth].borrow_mut().clear();
+        self.search_depth -= 1;
+        self.game = previous_game;
     }
 
     // currently we unmake move by copy

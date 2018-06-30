@@ -76,11 +76,26 @@ impl UCIEngine for Feldspar {
 
         let mut depth_reached = 0;
         let mut best_move = Move::null();
-        for i in 1 .. 100 {
+        let mut best_score = Score::min();
+
+        for i in 1 .. 999 {
             negamax( &mut self.context, i, Score::min(), Score::max() );
             if !self.context.ran_out_of_time {
                 depth_reached = i;
-                best_move = self.context.table.get_pv(*self.context.tree.focus(), depth_reached as usize)[0];
+                let pv = self.context.table.get_pv(*self.context.tree.focus(), depth_reached as usize);
+                best_move = pv[0].best_move();
+                best_score = pv[0].score();
+
+                let mut pv_str = String::new();
+
+                for entry in pv.iter() {
+                    if pv_str.len() > 0 {
+                        pv_str.push_str(" ");
+                    }
+                    pv_str.push_str(&entry.best_move().to_uci_str());
+                }
+
+                println!("info depth {} score cp {} pv {}", depth_reached, best_score.unwrap(), pv_str);
             } else {
                 break;
             }

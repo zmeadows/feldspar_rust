@@ -14,6 +14,7 @@ pub struct Square(u32);
 pub struct SearchTimer {
     start_time: i64,
     duration_ms: i64
+        //TODO: include max possible search time to clamp when scale_remaining is called
 }
 
 impl SearchTimer {
@@ -22,6 +23,10 @@ impl SearchTimer {
             start_time: Utc::now().timestamp_millis(),
             duration_ms: search_length as i64
         }
+    }
+
+    pub fn scale_remaining(&mut self, factor: f32) {
+        self.duration_ms = (factor * self.duration_ms as f32) as i64;
     }
 
     pub fn finished(&self) -> bool {

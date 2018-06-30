@@ -126,6 +126,11 @@ impl Move {
     pub fn is_null(&self) -> bool {
         self.0 == 0x0
     }
+
+    pub fn to_uci_str(&self) -> String {
+        //TODO: add promotion type
+        format!("{}{}", self.from().to_algebraic(), self.to().to_algebraic())
+    }
 }
 
 #[cfg(test)]

@@ -234,6 +234,38 @@ impl Game {
         return Some(game);
     }
 
+    pub fn make_null_move(&mut self) {
+        debug_assert!(!self.in_check());
+
+        let moving_color   = self.to_move;
+        let opponent_color = !moving_color;
+
+        self.halfmove_clock += 1;
+        if self.to_move == Color::Black {
+            self.fullmoves += 1;
+        }
+
+        self.to_move = !self.to_move;
+        self.hash.update_black_to_move();
+
+        let opp_king_square = self.board.get_king_square(opponent_color);
+        self.king_attackers = self.board.attackers(opp_king_square, !self.to_move);
+
+        let can_move = can_move(self);
+        self.ep_square = None;
+
+        // no moves available, game is over
+        if !can_move {
+            match self.king_attackers.population() {
+                0 => self.outcome = Some(GameResult::Draw),
+                _ => match self.to_move {
+                         Color::White => self.outcome = Some(GameResult::Win(Color::Black)),
+                         Color::Black => self.outcome = Some(GameResult::Win(Color::White))
+                     }
+            }
+        }
+    }
+
     pub fn make_move(&mut self, m: Move) {
         use Color::*;
         use PieceType::*;

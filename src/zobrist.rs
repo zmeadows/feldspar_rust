@@ -232,20 +232,18 @@ impl TranspositionTable {
         }
     }
 
-    pub fn get_pv(&self, mut game: Game, mut max_length: usize) -> Vec<Move> {
+    pub fn get_pv(&self, mut game: Game, mut max_length: usize) -> Vec<EntryData> {
         let mut variation = Vec::new();
 
         while max_length != 0 {
             match self.probe(game.hash) {
                 None => break,
                 Some(tentry) => {
+                    match tentry.node_type() {
+                        NodeType::PV => variation.push(tentry),
+                        _ => break
+                    }
                     let best_move = tentry.best_move();
-                    variation.push(best_move);
-                    // match tentry.node_type() {
-                    //     NodeType::PV => eprintln!("variation PV"),
-                    //     NodeType::All => eprintln!("variation All"),
-                    //     NodeType::Cut => eprintln!("variation Cut")
-                    // }
                     game.make_move(best_move);
                     max_length -= 1;
                 }

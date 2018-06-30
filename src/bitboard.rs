@@ -18,7 +18,6 @@ pub struct Bitboard(u64);
 impl Bitboard {
     pub const fn new(bb: u64) -> Bitboard { return Bitboard(bb); }
 
-    //TODO: test performance of alternative? De Bruijn Multiplication
     pub fn bitscan_forward(self) -> Square { return Square::new(self.0.trailing_zeros()); }
     pub fn bitscan_reverse(self) -> Square { return Square::new(63 - self.0.leading_zeros()); }
     pub fn nonempty(self) -> bool { return self.0 != 0; }
