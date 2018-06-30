@@ -5,13 +5,14 @@ use std::str::SplitWhitespace;
 use game::*;
 use movegen::*;
 use moves::*;
+use zobrist::*;
 
 pub trait UCIEngine {
     fn name(&self) -> &'static str;
     fn author(&self) -> &'static str;
     fn init(&mut self) -> () {}
     fn reset(&mut self) -> () {}
-    fn replace_game(&mut self, new_game: Game, moves_played: Vec<Move>);
+    fn replace_game(&mut self, new_game: Game, history: Vec<Hash>);
     fn find_best_move(&mut self, wtime: u32, btime: u32, winc: u32, binc: u32) -> ();
     // fn infinite_search(&mut self) -> ();
 
@@ -38,12 +39,12 @@ pub trait UCIEngine {
             }
         }
 
-        let mut moves = Vec::new();
+        let mut history = Vec::new();
         loop {
             if let Some(move_str) = args.next() {
                 let m = move_from_algebraic(&g, move_str.to_string()).unwrap();
                 g.make_move(m);
-                moves.push(m);
+                history.push(g.hash);
             } else {
                 break;
             }
@@ -51,7 +52,7 @@ pub trait UCIEngine {
 
         eprintln!("FEN re-created by feldspar: {}", g.to_fen());
 
-        self.replace_game(g, moves);
+        self.replace_game(g, history);
     }
 
     fn parse_go_cmd<'a>(&mut self, args: &mut SplitWhitespace<'a>) {

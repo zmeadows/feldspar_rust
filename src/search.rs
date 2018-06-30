@@ -41,7 +41,7 @@ pub fn negamax(context: &mut SearchContext, depth_left: u8, mut alpha: Score, mu
 
     if depth_left == 0 || context.tree.focus().outcome.is_some() {
         //OPTIMIZE: this copy is not necessary
-        context.qtree.reset_root(*context.tree.focus());
+        context.qtree.reset_root(*context.tree.focus(), vec![]);
         let (qscore, _) = quiescence(&mut context.qtree, alpha, beta);
 
         return (qscore, Move::null());

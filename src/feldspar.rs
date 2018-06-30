@@ -63,31 +63,33 @@ impl UCIEngine for Feldspar {
         }
 
         if my_time > opp_time {
-            self.context.timer = SearchTimer::new(my_time - opp_time);
+            self.context.timer = SearchTimer::new( max(my_time - opp_time, my_time/50) );
         } else {
-            self.context.timer = SearchTimer::new( max(my_time/40, 500) );
+            if my_time > 10000 {
+                self.context.timer = SearchTimer::new( max(my_time/40, 1500) );
+            } else {
+                self.context.timer = SearchTimer::new( max(my_time/40, 500) );
+            }
         }
+
+        self.context.ran_out_of_time = false;
 
         let mut depth_reached = 0;
         let mut best_move = Move::null();
-        let mut best_score = Score::min();
         for i in 1 .. 100 {
-            let (s,m) = negamax( &mut self.context, i, Score::min(), Score::max() );
+            negamax( &mut self.context, i, Score::min(), Score::max() );
             if !self.context.ran_out_of_time {
-                best_move = m;
-                best_score = s;
                 depth_reached = i;
+                best_move = self.context.table.get_pv(*self.context.tree.focus(), depth_reached as usize)[0];
             } else {
                 break;
             }
         }
 
-        let best_move = self.context.table.get_pv(*self.context.tree.focus(), depth_reached as usize)[0];
-
-        match self.context.tree.focus().to_move {
-            Color::White => eprintln!("score: {:?}", (best_score.unwrap() as f32)/100.0),
-            Color::Black => eprintln!("score: {:?}", (best_score.flipped().unwrap() as f32)/100.0)
-        }
+        // match self.context.tree.focus().to_move {
+        //     Color::White => eprintln!("score: {:?}", (best_score.unwrap() as f32)/100.0),
+        //     Color::Black => eprintln!("score: {:?}", (best_score.flipped().unwrap() as f32)/100.0)
+        // }
 
         println!( "bestmove {}{}"
                 , best_move.from().to_algebraic()
@@ -99,7 +101,7 @@ impl UCIEngine for Feldspar {
         //TODO: ponder while opponent thinks
     }
 
-    fn replace_game(&mut self, new_game: Game, history: Vec<Move>) {
-        self.context.tree.reset_root(new_game);
+    fn replace_game(&mut self, new_game: Game, history: Vec<Hash>) {
+        self.context.tree.reset_root(new_game, history);
     }
 }
