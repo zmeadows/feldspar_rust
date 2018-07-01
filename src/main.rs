@@ -12,8 +12,12 @@ extern crate num_cpus;
 extern crate rand;
 extern crate chrono;
 
+#[macro_use] extern crate clap;
+use clap::App;
+
 use std::fs::File;
 use std::thread;
+use std::process;
 
 mod search; use search::*;
 mod bitboard; use bitboard::*;
@@ -34,38 +38,51 @@ mod uci; use uci::*;
 mod zobrist; use zobrist::*;
 mod tree; use tree::*;
 
+const FELDSPAR_VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
 fn main() {
+    let yaml = load_yaml!("../cli.yml");
+    let matches = App::from_yaml(yaml).get_matches();
+
     init_zobrist_hashing();
     use Color::*;
     use PieceType::*;
 
-    // let g = Game::starting_position();
-    //let g = Game::from_fen_str("8/1p5p/1p3k2/2n3p1/2PN2P1/P3r2P/1P4K1/5R2 b - - 5 41").unwrap();
-    //let g = Game::random_game();
-    //let g = Game::from_fen_str("5bk1/2R1pp2/6p1/3PP2p/P3B3/5P1P/1r2K3/8 w - - 7 43").unwrap();
-    //println!("{}", g.to_fen());
-    // g.board.print();
+    if matches.is_present("ponder") {
+        let ponder_FEN = matches.value_of("ponder").unwrap();
+        match Game::from_fen_str(ponder_FEN) {
+            None => {
+                eprintln!("Invalid FEN string passed: {}", ponder_FEN);
+                process::exit(1);
+            }
 
-    // let mut tmp_tree = SearchTree::new(g);
-    // let mut tmp_qtree = SearchTree::new(g);
-    // tmp_qtree.in_quiescence = true;
-    // let mut tmp_table = TranspositionTable::new(20000000);
+            Some(game) => {
+                game.board.print();
+                println!("{}", game.to_fen());
+                let mut tmp_tree = SearchTree::new(game);
+                let mut tmp_qtree = SearchTree::new(game);
+                tmp_qtree.in_quiescence = true;
+                let mut tmp_table = TranspositionTable::new(20000000);
 
-    // let mut context = SearchContext {
-    //     tree: tmp_tree,
-    //     qtree: tmp_qtree,
-    //     table: tmp_table,
-    //     timer: SearchTimer::new(300)
-    // };
+                let mut context = SearchContext {
+                    tree: tmp_tree,
+                    qtree: tmp_qtree,
+                    table: tmp_table,
+                    timer: SearchTimer::new(u32::max_value()),
+                    ran_out_of_time: false
+                };
 
-    // for i in 1..15 {
-    //      let (s,m) = negamax(&mut context, i, Score::min(), Score::max() );
-    //      m.print();
-    //      //let best_move = context.table.get_pv(*context.tree.focus())[0];
-    //      if context.timer.finished() {
-    //          break;
-    //      }
-    // }
+                for i in 1 .. {
+                    let (s,m) = negamax(&mut context, i, Score::min(), Score::max());
+                    m.print();
+                }
+            }
+        }
+    } else if matches.is_present("perft") {
+    } else if matches.is_present("uci") {
+        Feldspar::new().run();
+    }
+
 
     // g.board.print();
     // let (best_score, best_move) = alpha_beta(&mut tree, 5);
@@ -95,7 +112,5 @@ fn main() {
     //     game_copy.board.print();
     // }
 
-    let mut f = Feldspar::new();
-    f.run();
 
 }

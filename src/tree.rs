@@ -126,8 +126,8 @@ impl SearchTree {
         self.current_line.clear();
         self.root_history = history.clone();
 
-        for (_, buf) in self.move_stack.iter().enumerate() {
-            buf.borrow_mut().clear();
+        for i in 0 .. self.search_depth {
+            self.move_stack[i].borrow_mut().clear();
         }
     }
 }

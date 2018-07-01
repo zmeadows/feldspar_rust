@@ -24,33 +24,34 @@ pub fn negamax(context: &mut SearchContext, mut depth_left: u8, mut alpha: Score
     }
 
     // null move reduction
-    if !context.tree.focus().in_check() {
-        let R = if depth_left > 6 { 4 } else { 3 };
+    // TODO: add more conditions here: example, last two moves not null moves, not in end game, etc
+    // if !context.tree.focus().in_check() && context.tree.focus().board.occupied().population() > 10 {
+    //     let R = if depth_left > 6 { 3 } else { 2 };
 
-        let game_copy = *context.tree.focus();
-        context.tree.make_null_move();
+    //     let game_copy = *context.tree.focus();
+    //     context.tree.make_null_move();
 
-        let null_move_depth = if depth_left >= R + 1 {
-            depth_left - R - 1
-        } else {
-            0
-        };
+    //     let null_move_depth = if depth_left >= R + 1 {
+    //         depth_left - R - 1
+    //     } else {
+    //         0
+    //     };
 
-        let (s1,mb) = negamax(context, null_move_depth, beta.flipped(), alpha.flipped());
-        let s2 = s1.flipped();
-        context.tree.unmake_null_move(game_copy);
+    //     let (s1,mb) = negamax(context, null_move_depth, beta.flipped(), alpha.flipped());
+    //     let s2 = s1.flipped();
+    //     context.tree.unmake_null_move(game_copy);
 
-        if (s2 >= beta) {
-            if depth_left > 4 {
-                depth_left -= 4; // reduce search
-            } else {
-                //OPTIMIZE: this copy is not necessary
-                context.qtree.reset_root(*context.tree.focus(), vec![]);
-                let (qscore, _) = quiescence(&mut context.qtree, alpha, beta);
-                return (qscore, Move::null());
-            }
-        }
-    }
+    //     if (s2 >= beta) {
+    //         if depth_left > 2 {
+    //             depth_left -= 2; // reduce search
+    //         } else {
+    //             //OPTIMIZE: this copy is not necessary
+    //             context.qtree.reset_root(*context.tree.focus(), vec![]);
+    //             let (qscore, _) = quiescence(&mut context.qtree, alpha, beta);
+    //             return (qscore, Move::null());
+    //         }
+    //     }
+    // }
 
     let alpha_orig = alpha;
 

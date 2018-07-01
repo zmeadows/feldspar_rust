@@ -1,4 +1,6 @@
-time management
+incrementally updated Score
+
+figure out bug where horrible moves are played mid-way through game: something to do with the transposition table getting over-written.
 
 add checks to quiescence search
 

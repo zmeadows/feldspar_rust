@@ -2,6 +2,9 @@ use std::io::stdin;
 use std::io::BufRead;
 use std::str::SplitWhitespace;
 
+use std::fs::OpenOptions;
+use std::io::prelude::*;
+
 use game::*;
 use movegen::*;
 use moves::*;
@@ -73,10 +76,7 @@ pub trait UCIEngine {
             }
         }
 
-        eprintln!("TIMES: {} {} {} {}", wtime, btime, winc, binc);
-
         self.find_best_move(wtime, btime, winc, binc);
-
     }
 
     fn run(&mut self) -> () {
@@ -85,6 +85,17 @@ pub trait UCIEngine {
             eprintln!("line before received from gui/server: {:?}", line);
             let line = line.unwrap_or("".into());
             eprintln!("line received from gui/server: {}", line);
+
+            let mut file = OpenOptions::new()
+                .write(true)
+                .append(true)
+                .open("C:/Code/feldspar/log.txt")
+                .unwrap();
+
+            if let Err(e) = writeln!(file, "{}", line) {
+                eprintln!("Couldn't write to file: {}", e);
+            }
+
 
             let mut params = line.split_whitespace();
 
@@ -95,9 +106,10 @@ pub trait UCIEngine {
                     "uci" => {
                         println!("id name {}", self.name());
                         println!("id author {}", self.author());
-                    }
+                        println!("uciok");
+                    },
 
-                    "setoption" => println!("{}", line),
+                    "setoption" => {},
                     "isready"    => println!("readyok"),
                     "ucinewgame" => self.reset(),
                     "position"   => self.update_position(&mut params),

@@ -1,0 +1,27 @@
+name: feldspar
+version: "0.2.0"
+author: zmeadows <zmeadows@gmail.com>
+about: bitboard chess engine
+args:
+    - ponder:
+        long: ponder
+        help: consider a position indefinitely
+        takes_value: true
+        group: action
+    - perft:
+        long: perft
+        help: run PERFT on the specified position
+        takes_value: true
+        group: action
+    - uci:
+        long: uci
+        help: run in UCI mode for interacting with a GUI
+        group: action
+    - depth:
+        long: depth
+        help: only consider N plies
+        takes_value: true
+    - hashsize:
+        long: hashsize
+        help: set size of hash table in megabytes
+        takes_value: true

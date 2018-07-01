@@ -26,7 +26,8 @@ pub struct Game {
     pub fullmoves: u16,
     pub king_attackers: Bitboard,
     pub outcome: Option<GameResult>,
-    pub hash: Hash
+    pub hash: Hash,
+    // pub score: Score
 }
 
 impl Game {

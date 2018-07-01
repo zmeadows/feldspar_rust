@@ -83,19 +83,22 @@ impl UCIEngine for Feldspar {
             if !self.context.ran_out_of_time {
                 depth_reached = i;
                 let pv = self.context.table.get_pv(*self.context.tree.focus(), depth_reached as usize);
-                best_move = pv[0].best_move();
-                best_score = pv[0].score();
+                if pv.len() > 0 {
+                    best_move = pv[0].best_move();
+                    best_score = pv[0].score();
 
-                let mut pv_str = String::new();
+                    let mut pv_str = String::new();
 
-                for entry in pv.iter() {
-                    if pv_str.len() > 0 {
-                        pv_str.push_str(" ");
+                    for entry in pv.iter() {
+                        if pv_str.len() > 0 {
+                            pv_str.push_str(" ");
+                        }
+                        pv_str.push_str(&entry.best_move().to_uci_str());
                     }
-                    pv_str.push_str(&entry.best_move().to_uci_str());
-                }
 
-                println!("info depth {} score cp {} pv {}", depth_reached, best_score.unwrap(), pv_str);
+                    println!("info depth {} score cp {} pv {}", depth_reached, best_score.unwrap(), pv_str);
+                    eprintln!("best_move from negamax: {}{}", best_move.from().to_algebraic(), best_move.to().to_algebraic());
+                }
             } else {
                 break;
             }

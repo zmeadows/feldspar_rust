@@ -6,14 +6,12 @@ authors = ["zmeadows <zmeadows@gmail.com>"]
 [dependencies]
 colored = "1.6"
 log = "0.4.1"
-pretty_env_logger = "0.2.3"
 bitflags = "1.0.3"
 prettytable-rs = "^0.6"
 num_cpus = "1.0"
 rand = "*"
-flame = "0.2.2"
-flamer = "^0.2.3"
 chrono = "0.4"
+clap = {version = "~2.27.0", features = ["yaml"]}
 
 [profile.release]
 debug = true
